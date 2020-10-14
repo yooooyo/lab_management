@@ -220,6 +220,7 @@ class Uut(models.Model):
         db_table = 'uut'
 
 
+
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
     member = models.ForeignKey(Member, models.DO_NOTHING)
