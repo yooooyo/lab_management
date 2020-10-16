@@ -4,7 +4,8 @@ from .models import Platform,Uut
 
 # Create your views here.
 def index(request):
-    platform = Platform.objects.using('labpostgres').all()
+    # platform = Platform.objects.using('labpostgres').all()
+    platform = Platform.objects.all()
     return render(request,'iur/index.html',{'platform':platform})
 
 from django.contrib.auth.models import User,Group
@@ -22,7 +23,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_class = [permissions.IsAuthenticated]
 
 class UutViewSet(viewsets.ModelViewSet):
-    queryset = Uut.objects.using('labpostgres').order_by('-id')
+    queryset = Uut.objects.order_by('-id')
     serializer_class = UutSerializer
     permission_class = [permissions.IsAuthenticated]
 

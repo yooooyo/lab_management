@@ -110,6 +110,8 @@ class Member(models.Model):
         managed = False
         db_table = 'member'
 
+    def __str__(self):
+        return self.name
 
 class Module(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -134,8 +136,17 @@ class Platform(models.Model):
     content = models.CharField(max_length=100, blank=True, null=True)
     behavior = models.CharField(max_length=100, blank=True, null=True)
     codename = models.CharField(max_length=200, blank=True, null=True)
-    group = models.CharField(max_length=50, blank=True, null=True)
-    target = models.CharField(max_length=50, blank=True, null=True)
+    GROUP_CHOICE = [
+        ('COMMERICAL','Commerical'),
+        ('CONSUMER','Consumer'),
+    ]
+    group = models.CharField(max_length=50, blank=True, null=True,choices = GROUP_CHOICE,)
+    TARGET_CHOICE = [
+        ('NB','Notebook'),
+        ('DT','Desktop'),
+        ('AIO','ALL in one'),
+    ]
+    target = models.CharField(max_length=50, blank=True, null=True,choices = TARGET_CHOICE)
     development_center = models.CharField(max_length=200, blank=True, null=True)
     cycle = models.CharField(max_length=50, blank=True, null=True)
     forecast_cycle = models.CharField(max_length=50, blank=True, null=True)
@@ -150,6 +161,9 @@ class Platform(models.Model):
     class Meta:
         managed = False
         db_table = 'platform'
+
+    def __str__(self):
+        return self.codename
 
 
 class Script(models.Model):
@@ -169,6 +183,9 @@ class Script(models.Model):
     class Meta:
         managed = False
         db_table = 'script'
+
+    def __str__(self):
+        return self.name
 
 
 class Task(models.Model):
@@ -200,26 +217,33 @@ class Tool(models.Model):
         managed = False
         db_table = 'tool'
 
+    def __str__(self):
+        return self.name
 
 class Uut(models.Model):
     id = models.BigAutoField(primary_key=True)
-    platform = models.ForeignKey(Platform, models.DO_NOTHING, blank=True, null=True)
-    sn = models.CharField(max_length=50)
+    platform = models.ForeignKey('Platform', models.DO_NOTHING, blank=True, null=True)
+    sn = models.CharField(unique=True, max_length=50)
     sku = models.CharField(max_length=50, blank=True, null=True)
     cpu = models.CharField(max_length=50, blank=True, null=True)
-    phase = models.CharField(max_length=50, blank=True, null=True)
-    status = models.CharField(max_length=50)
+    STATUS_CHOICE = [   
+        ('KEEP ON','Keep On'),
+        ('RENT','Rent'),
+        ('RETURN 8F','Return 8F'),
+    ]
+    status = models.CharField(max_length=50,choices = STATUS_CHOICE,default=STATUS_CHOICE[0][1])
     scrap_reason = models.TextField(blank=True, null=True)
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     scrap = models.BooleanField()
     keyin_time = models.DateTimeField(blank=True, null=True)
+    phase = models.ForeignKey('UutPhase', models.DO_NOTHING, db_column='phase', blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'uut'
-
-
+    def __str__(self):
+        return self.sn
 
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -232,3 +256,18 @@ class UutBorrowHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'uut_borrow_history'
+
+
+
+
+
+class UutPhase(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    phase_text = models.CharField(max_length=30, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'uut_phase'
+
+    def __str__(self):
+        return self.phase_text
