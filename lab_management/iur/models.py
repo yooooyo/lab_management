@@ -132,10 +132,10 @@ class Module(models.Model):
 
 class Platform(models.Model):
     id = models.BigAutoField(primary_key=True)
-    update_time = models.DateTimeField()
+    update_time = models.DateTimeField(auto_now=True)
     content = models.CharField(max_length=100, blank=True, null=True)
-    behavior = models.CharField(max_length=100, blank=True, null=True)
-    codename = models.CharField(max_length=200, blank=True, null=True)
+    behavior = models.CharField(max_length=100, blank=True, null=True,help_text = 'ex: NPI/OOC/SOFTPAQ')
+    codename = models.CharField(max_length=200, blank=True, null=True,help_text='ex: Zigzag')
     GROUP_CHOICE = [
         ('COMMERICAL','Commerical'),
         ('CONSUMER','Consumer'),
@@ -147,14 +147,14 @@ class Platform(models.Model):
         ('AIO','ALL in one'),
     ]
     target = models.CharField(max_length=50, blank=True, null=True,choices = TARGET_CHOICE)
-    development_center = models.CharField(max_length=200, blank=True, null=True)
-    cycle = models.CharField(max_length=50, blank=True, null=True)
+    development_center = models.CharField(max_length=200, blank=True, null=True,help_text='ex: chongqing')
+    cycle = models.CharField(max_length=50, blank=True, null=True,help_text='ex: 2020/20H1')
     forecast_cycle = models.CharField(max_length=50, blank=True, null=True)
-    series = models.CharField(max_length=200, blank=True, null=True)
+    series = models.CharField(max_length=200, blank=True, null=True,help_text='ex: 300/400/500/600')
     forecast_series = models.CharField(max_length=200, blank=True, null=True)
-    chipset = models.CharField(max_length=200, blank=True, null=True)
-    marketing_name = models.CharField(max_length=200, blank=True, null=True)
-    odm = models.CharField(db_column='ODM', max_length=50, blank=True, null=True)  # Field name made lowercase.
+    chipset = models.CharField(max_length=200, blank=True, null=True,help_text='ex: Tiger Lake/Coffee Lake')
+    marketing_name = models.CharField(max_length=200, blank=True, null=True,help_text='ex: HP Elitebook 830 G5')
+    odm = models.CharField(db_column='ODM', max_length=50, blank=True, null=True,help_text = 'ex: IEC/QUANTA')  # Field name made lowercase.
     sepm = models.CharField(db_column='SEPM', max_length=50, blank=True, null=True)  # Field name made lowercase.
     pdm = models.CharField(db_column='PDM', max_length=50, blank=True, null=True)  # Field name made lowercase.
 
@@ -222,8 +222,8 @@ class Tool(models.Model):
 
 class Uut(models.Model):
     id = models.BigAutoField(primary_key=True)
-    platform = models.ForeignKey('Platform', models.DO_NOTHING, blank=True, null=True)
-    sn = models.CharField(unique=True, max_length=50)
+    platform = models.ForeignKey('Platform', models.DO_NOTHING, blank=True, null=True, )
+    sn = models.CharField(unique=True, max_length=50,blank=True,)
     sku = models.CharField(max_length=50, blank=True, null=True)
     cpu = models.CharField(max_length=50, blank=True, null=True)
     STATUS_CHOICE = [   
@@ -232,16 +232,17 @@ class Uut(models.Model):
         ('RETURN 8F','Return 8F'),
     ]
     status = models.CharField(max_length=50,choices = STATUS_CHOICE,default=STATUS_CHOICE[0][1])
-    scrap_reason = models.TextField(blank=True, null=True)
+    scrap_reason = models.TextField(blank=True, null=True,)
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
-    scrap = models.BooleanField()
-    keyin_time = models.DateTimeField(blank=True, null=True)
+    scrap = models.BooleanField(default=False,)
+    keyin_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     phase = models.ForeignKey('UutPhase', models.DO_NOTHING, db_column='phase', blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'uut'
+
     def __str__(self):
         return self.sn
 
@@ -256,6 +257,7 @@ class UutBorrowHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'uut_borrow_history'
+
 
 
 
