@@ -73,10 +73,11 @@ class UutAdmin(admin.ModelAdmin):
 
     ###  settings list objects
     # list_max_show_all = 50
-    list_per_page = 200
+    list_per_page = 20
     list_display = ('id','platform','phase','sku','sn','borrower_display','status','scrap','scrap_reason','position','cpu','remark','keyin_time')
     # list_editable = ('position','cpu','remark')
-    list_filter = ('phase','scrap','position')
+    # list_editable = ('cpu',)
+    list_filter = ('phase','scrap','position','status')
     date_hierarchy ='keyin_time'
     list_display_links = ('sn',)
     search_fields = ('id','sn','sku','cpu','status','scrap_reason','remark','position','platform__codename','uutborrowhistory__member__name')
@@ -179,7 +180,14 @@ class UutAdmin(admin.ModelAdmin):
         return super().add_view(request, form_url=form_url, extra_context=extra_context)
 
     def save_model(self, request, obj, form, change):
-        
+        if request.method == 'POST' and 'uut-save' in request.POST:
+            sn_list = request.POST.getlist('sn')
+            sku_list = request.POST.getlist('sku')
+            position_list = request.POST.getlist('position')
+            for sn,sku,position in zip(sn_list,sku_list,position_list):
+                Uut.objects.create(sn = sn,sku=sku,position=position,phase = obj.phase,platform=obj.platform)
+            self.message_user(request,f'{len(sn_list)} uut be added.',messages.SUCCESS)
+            return
         return super().save_model(request, obj, form, change)
     change_list_template = 'admin/uut_changelist_template.html'
         
