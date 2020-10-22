@@ -224,7 +224,7 @@ class Uut(models.Model):
     id = models.BigAutoField(primary_key=True)
     platform = models.ForeignKey('Platform', models.DO_NOTHING, blank=True, null=True, )
     sn = models.CharField(unique=True, max_length=50,blank=True,)
-    sku = models.CharField(max_length=50, blank=True, null=True)
+    sku = models.CharField(max_length=50, blank=True, null=True,)
     cpu = models.CharField(max_length=50, blank=True, null=True)
     STATUS_CHOICE = [   
         ('KEEP ON','Keep On'),

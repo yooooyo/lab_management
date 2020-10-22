@@ -6,9 +6,11 @@ from django.contrib.auth.models import Group,User
 # Register your models here.
 
 admin.site.site_header = 'Lab Admin'
+admin.site.site_title  = 'Lab_Admin'
+admin.site.enable_nav_sidebar = True
 
-admin.site.unregister(User)
-admin.site.unregister(Group)
+# admin.site.unregister(User)
+# admin.site.unregister(Group)
 
 @admin.register(UutPhase)
 class UutPhaseAdmin(admin.ModelAdmin):
@@ -16,7 +18,7 @@ class UutPhaseAdmin(admin.ModelAdmin):
 
 class UutInline(admin.TabularInline):
     model = Uut
-    extra = 30
+    extra = 2
     fieldsets = (
         (None, {
             "fields": (
@@ -87,18 +89,26 @@ class UutAdmin(admin.ModelAdmin):
     autocomplete_fields = ['platform',]
     # readonly_fields = ('sn',)
     fieldsets = (
-        ('UUT info', {
-            "fields": (
-                'sn','sku','phase','platform',
-            ),
-        }),
-        ('STORAGE info', {
-            "fields": (
-                'status','position',
-            ),
+        # ('UUT info', {
+        #     "fields": (
+        #         'sn','sku','phase','platform',
+            # ),
+            # "classes": (
+            #     'wide','extrapretty'
+            # ),
+        # }),
+        # ('STORAGE info', {
+        #     "fields": (
+        #         'position',
+        #     ),
             # "classes":('wide','extrapretty'),
             # "classes":('collapse',),
             # "description":'<code> UUT storage information </code>',
+        # }),
+        (None,{
+            "fields":(
+                'phase','platform',
+            )
         }),
     )
     
@@ -162,11 +172,16 @@ class UutAdmin(admin.ModelAdmin):
 
 
     # custom view
+
     add_form_template = 'admin/add_uut_template.html'
     def add_view(self, request, form_url='', extra_context=None):
+        form = self.get_form(request,obj = None,change=False)
+        return super().add_view(request, form_url=form_url, extra_context=extra_context)
+
+    def save_model(self, request, obj, form, change):
         
-        count = [i for i in range(3)]
-        return super().add_view(request, form_url=form_url, extra_context={'count':count})
+        return super().save_model(request, obj, form, change)
+    change_list_template = 'admin/uut_changelist_template.html'
         
 
 

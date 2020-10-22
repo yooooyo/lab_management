@@ -1,5 +1,92 @@
 {% extends 'admin/change_form.html' %}
 
 {% block field_sets %}
-    Add something here
+    {% for fieldset in adminform %}
+        <fieldset class="module aligned {{ fieldset.classes }}">
+            {% for line in fieldset %}
+                <div class="form-row{% if line.fields|length_is:'1' and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
+                    {% if line.fields|length_is:'1' %}{{ line.errors }}{% endif %}
+                    {% for field in line %}
+                        <div{% if not line.fields|length_is:'1' %} class="fieldBox{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if not field.is_readonly and field.errors %} errors{% endif %}{% if field.field.is_hidden %} hidden{% endif %}"{% elif field.is_checkbox %} class="checkbox-row"{% endif %}>
+                            {% if not line.fields|length_is:'1' and not field.is_readonly %}{{ field.errors }}{% endif %}
+                            {% if field.is_checkbox %}
+                                {{ field.field }}
+                            {% else %}
+                                {{ field.label_tag}}
+                                {% if field.is_readonly %}
+                                    <div class="readonly">{{ field.contents }}</div>
+                                {% else %}
+                                    {{ field.field }}
+                                {% endif %}
+                            {% endif %}
+                            {% if field.field.help_text %}
+                                <div class="help">{{ field.field.help_text|safe }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </fieldset>
+
+        <fieldset class="module">
+            <h2>UUTS</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="column-sn">SN</th>
+                        <th class="column-sku">SKU</th>
+                        <th class="column-position">POSITION</th>
+                        <th class="column-delete">DELETE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="form-row has_original" id="root-input">
+                        <td class="field-sn">
+                            <input type="text" name="sn" class="vTextField" maxlength="10" id="sn-0">
+                        </td>
+                        <td>
+                            <input type="text" name="sku" class="vTextField">
+                        </td>
+                        <td>
+                            <input type="text" name="position" class="vTextField">
+                        </td>
+                        <td>
+                            <a href="javascript:void(0);" id='a-0' onclick="removeUutInfo(this)"><img src="/static/admin/img/icon-deletelink.svg" alt="Delete"></a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </fieldset>
+
+    {% endfor %}
+    <script>
+        document.getElementById('sn-0').onkeydown = function(){
+            if(this.value.length == this.attributes['maxlength'].value){
+                var rootInput = this.parentNode.parentNode;
+                var rootInputCopy = rootInput.cloneNode(true);
+                rootInputCopy.setAttribute['id'] = null;
+                var snInput = rootInputCopy.firstElementChild.firstElementChild;
+                snInput.setAttribute['id'] = '';
+                snInput.value='';
+                snInput.onkeydown = this.onkeydown;
+                this.onkeydown='';
+                rootInput.parentNode.insertBefore(rootInputCopy,rootInput.nextSibling);
+                snInput.focus();
+            }
+        };
+        function removeUutInfo(obj){
+            var snInput = obj.parentElement.parentElement.firstElementChild.firstElementChild;
+            var snInputPreviousSibling = snInput.parentNode.parentNode.previousSibling.firstElementChild.firstElementChild;
+            if(snInput.onkeydown != null){
+                snInputPreviousSibling.onkeydown = snInput.onkeydown;
+            }
+            var deleteLinkPreviousSibling = snInputPreviousSibling.parentElement.parentElement.lastElementChild.firstElementChild;
+            if(snInputPreviousSibling == null){
+                deleteLinkPreviousSibling.remove();
+            }
+            obj.parentNode.parentNode.remove();
+        }
+
+    </script>
 {% endblock field_sets %}
+
