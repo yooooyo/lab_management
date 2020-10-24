@@ -80,7 +80,7 @@ class UutAdmin(admin.ModelAdmin):
     list_filter = ('phase','scrap','position','status')
     date_hierarchy ='keyin_time'
     list_display_links = ('sn',)
-    search_fields = ('id','sn','sku','cpu','status','scrap_reason','remark','position','platform__codename','uutborrowhistory__member__name')
+    search_fields = ('sn','platform__codename',)
     show_full_result_count = True
     # radio_fields = {"phase":admin.VERTICAL}
 
@@ -122,11 +122,11 @@ class UutAdmin(admin.ModelAdmin):
     colored_phase.admin_order_field = 'phase'
 
     def borrower_display(self,obj):
-        borrower = obj.uutborrowhistory_set.last()
+        borrower = obj.uutborrowhistory_set.filter(back_time__isnull=True)
         if borrower: return borrower.member.name
         return '-'
     borrower_display.short_description = 'Borrower'
-    borrower_display.admin_order_field = 'uutborrowhistory__member__name'
+    # borrower_display.admin_order_field = 'uutborrowhistory__member__name'
 
     #override
     # def save_model(self, request, obj, form, change):
@@ -190,6 +190,11 @@ class UutAdmin(admin.ModelAdmin):
             return
         return super().save_model(request, obj, form, change)
     change_list_template = 'admin/uut_changelist_template.html'
+
+    def get_search_results(self,request,queryset,term):
+        qs ,use_distinct = super().get_search_results(request,queryset,term)
+        qs |= qs.uutborrowhistory_set.filter(member__name=term).filter(back_time__isnull=True)
+        return qs,use_distinct
         
 
 
