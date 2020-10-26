@@ -1,6 +1,6 @@
 from django.contrib import admin,messages
 from django.utils.translation import ngettext
-from .models import Uut,Platform,UutBorrowHistory,UutPhase
+from .models import Uut,Platform,UutBorrowHistory,UutPhase,Member
 
 from django.contrib.auth.models import Group,User
 # Register your models here.
@@ -11,6 +11,11 @@ admin.site.enable_nav_sidebar = True
 
 # admin.site.unregister(User)
 # admin.site.unregister(Group)
+
+@admin.register(Member)
+class MemberAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
+    pass
 
 @admin.register(UutPhase)
 class UutPhaseAdmin(admin.ModelAdmin):
@@ -59,10 +64,11 @@ class PlatformAdmin(admin.ModelAdmin):
 
 @admin.register(UutBorrowHistory)
 class UutBorrowHistoryAdmin(admin.ModelAdmin):
-    list_display = ('uut','member','rent_time')
-    
+    list_display = ('uut','member','rent_time','back_time')
+    fields = ('uut','member','back_time','purpose')
     search_fields=('member__name','uut__sn',)
-
+    raw_id_fields = ('uut','member')
+    autocomplete_fields=('uut','member')
     pass
 
 @admin.register(Uut)
@@ -80,7 +86,7 @@ class UutAdmin(admin.ModelAdmin):
     list_filter = ('phase','scrap','position','status')
     date_hierarchy ='keyin_time'
     list_display_links = ('sn',)
-    search_fields = ('id','sn','sku','cpu','status','scrap_reason','remark','position','platform__codename','uutborrowhistory__member__name')
+    search_fields = ('sn','platform__codename','uutborrowhistory__member__name')
     show_full_result_count = True
     # radio_fields = {"phase":admin.VERTICAL}
 
@@ -122,11 +128,11 @@ class UutAdmin(admin.ModelAdmin):
     colored_phase.admin_order_field = 'phase'
 
     def borrower_display(self,obj):
-        borrower = obj.uutborrowhistory_set.last()
+        borrower = obj.uutborrowhistory_set.filter(back_time__isnull=True).last()
         if borrower: return borrower.member.name
         return '-'
     borrower_display.short_description = 'Borrower'
-    borrower_display.admin_order_field = 'uutborrowhistory__member__name'
+    borrower_display.admin_order_field = ''
 
     #override
     # def save_model(self, request, obj, form, change):
@@ -190,7 +196,15 @@ class UutAdmin(admin.ModelAdmin):
             return
         return super().save_model(request, obj, form, change)
     change_list_template = 'admin/uut_changelist_template.html'
-        
+
+    def get_search_results(self, request, queryset, search_term):
+        qs,use_distinct = super().get_search_results(request, queryset, search_term)
+        # from django.db.models import Count
+        # q = qs.annotate(id_count = Count('id')) > 0
+        for uut in qs:
+            if uut.uutborrowhistory_set:
+                pass
+        return qs,use_distinct
 
 
 

@@ -249,15 +249,14 @@ class Uut(models.Model):
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
     member = models.ForeignKey(Member, models.DO_NOTHING)
-    rent_time = models.DateTimeField()
-    back_time = models.TimeField(blank=True, null=True)
+    rent_time = models.DateTimeField(auto_now=True)
+    back_time = models.DateTimeField(blank=True, null=True)
     uut = models.ForeignKey(Uut, models.DO_NOTHING)
     purpose = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'uut_borrow_history'
-
 
 
 
