@@ -86,7 +86,7 @@ class UutAdmin(admin.ModelAdmin):
     list_filter = ('phase','scrap','position','status')
     date_hierarchy ='keyin_time'
     list_display_links = ('sn',)
-    search_fields = ('sn','platform__codename','uutborrowhistory__member__name')
+    search_fields = ('sn','platform__codename',)
     show_full_result_count = True
     # radio_fields = {"phase":admin.VERTICAL}
 
@@ -133,6 +133,7 @@ class UutAdmin(admin.ModelAdmin):
         return '-'
     borrower_display.short_description = 'Borrower'
     borrower_display.admin_order_field = ''
+
 
     #override
     # def save_model(self, request, obj, form, change):
@@ -197,14 +198,12 @@ class UutAdmin(admin.ModelAdmin):
         return super().save_model(request, obj, form, change)
     change_list_template = 'admin/uut_changelist_template.html'
 
-    def get_search_results(self, request, queryset, search_term):
-        qs,use_distinct = super().get_search_results(request, queryset, search_term)
-        # from django.db.models import Count
-        # q = qs.annotate(id_count = Count('id')) > 0
-        for uut in qs:
-            if uut.uutborrowhistory_set:
-                pass
+    def get_search_results(self,request,queryset,term):
+        qs ,use_distinct = super().get_search_results(request,queryset,term)
+        borrower = UutBorrowHistory.objects.filter(member__name=term).filter(back_time__isnull=True).last()
+        print(borrower)
         return qs,use_distinct
+        
 
 
 
