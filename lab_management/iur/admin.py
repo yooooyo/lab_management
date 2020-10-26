@@ -42,9 +42,9 @@ class PlatformAdmin(admin.ModelAdmin):
     list_filter = ('series','codename')
     list_display = ('codename','chipset','group','target','cycle','series','marketing_name','odm')
 
-    inlines = [
-        UutInline,
-    ]
+    # inlines = [
+    #     UutInline,
+    # ]
 
     fieldsets = (
         ('Solid info', {
@@ -86,7 +86,7 @@ class UutAdmin(admin.ModelAdmin):
     list_filter = ('phase','scrap','position','status')
     date_hierarchy ='keyin_time'
     list_display_links = ('sn',)
-    search_fields = ('sn','platform__codename',)
+    search_fields = ('sn','platform__codename','uutborrowhistory__member__name')
     show_full_result_count = True
     # radio_fields = {"phase":admin.VERTICAL}
 
@@ -118,7 +118,6 @@ class UutAdmin(admin.ModelAdmin):
             )
         }),
     )
-    
 
 
     def colored_phase(self,obj):
@@ -132,7 +131,7 @@ class UutAdmin(admin.ModelAdmin):
         if borrower: return borrower.member.name
         return '-'
     borrower_display.short_description = 'Borrower'
-    borrower_display.admin_order_field = ''
+    # borrower_display.admin_order_field = 'uutborrowhistory__member__name'
 
 
     #override
@@ -161,17 +160,22 @@ class UutAdmin(admin.ModelAdmin):
 
 
     # actions
-    actions = ['mark_scrap','mark_unscrap','make_edit']
+    actions = ['mark_scrap','mark_unscrap','make_edit','edit_uuts']
 
     def mark_scrap(self,request,queryset):
         be_updated = queryset.update(scrap = True)
         self.message_user(request,ngettext(f'{be_updated} item was mark scrap',f'{be_updated} items were mark scrap',be_updated),messages.SUCCESS)
+        
     mark_scrap.short_description = 'Scrap'
 
     def mark_unscrap(self,request,queryset):
         be_updated = queryset.update(scrap = False)
         self.message_user(request,ngettext(f'{be_updated} item was mark unscrap',f'{be_updated} items were mark unscrap',be_updated),messages.SUCCESS)
     mark_unscrap.short_description = 'UnScrap'
+
+    def edit_uuts(self,request,queryset):
+        self.get_search_results(request,queryset,'')
+    edit_uuts.short_description = 'Edit UUTs'
 
     # def make_edit(self,request,queryset,**kwargs):
     #     self.list_editable = ('position','cpu','remark','scrap','status','sku','phase','platform')
@@ -182,9 +186,6 @@ class UutAdmin(admin.ModelAdmin):
     # custom view
 
     add_form_template = 'admin/add_uut_template.html'
-    def add_view(self, request, form_url='', extra_context=None):
-        form = self.get_form(request,obj = None,change=False)
-        return super().add_view(request, form_url=form_url, extra_context=extra_context)
 
     def save_model(self, request, obj, form, change):
         if request.method == 'POST' and 'uut-save' in request.POST:
@@ -199,11 +200,27 @@ class UutAdmin(admin.ModelAdmin):
     change_list_template = 'admin/uut_changelist_template.html'
 
     def get_search_results(self,request,queryset,term):
-        qs ,use_distinct = super().get_search_results(request,queryset,term)
-        borrower = UutBorrowHistory.objects.filter(member__name=term).filter(back_time__isnull=True).last()
-        print(borrower)
-        return qs,use_distinct
+        def exclude_borrower_has_returned_uut(qs,term):
+            _qs = qs
+            member_lookup = Member.objects.filter(name__search=term)
+            if member_lookup.count()>0:
+                for uut in qs:
+                    u = uut.uutborrowhistory_set.filter(member__name__search=term).filter(back_time__isnull=True).last()
+                    if not u:
+                        _qs = _qs.exclude(sn=uut.sn)
+            return _qs
         
+        qs ,use_distinct = super().get_search_results(request,queryset,term)
+        qs = exclude_borrower_has_returned_uut(qs,term)
+
+        
+        return qs,use_distinct
+
+    def get_changelist_form(self, request, **kwargs):
+        return super().get_changelist_form(request, **kwargs)
+
+    
+
 
 
 

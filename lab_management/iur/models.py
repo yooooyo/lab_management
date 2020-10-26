@@ -258,7 +258,9 @@ class UutBorrowHistory(models.Model):
         managed = False
         db_table = 'uut_borrow_history'
 
-
+    def __str__(self):
+        return f"{self.id} {self.uut} {self.member} '{self.rent_time}' '{self.back_time}''"
+    
 
 
 
