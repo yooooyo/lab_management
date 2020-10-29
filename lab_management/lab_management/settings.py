@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'iur.apps.IurConfig',
     'rest_framework',
 
+    'oldiur'
+
 ]
 
 MIDDLEWARE = [
@@ -89,11 +91,23 @@ DATABASES = {
     # },
     'default':{
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'test',
+        'NAME': 'lab',
         'USER': 'postgres',
         'PASSWORD': '123',
-        'HOST': '192.168.1.118',
+        # 'HOST': '192.168.1.118',
+        'HOST': 'localhost',
         'PORT': '5432',
+    },
+    'old':{
+        'ENGINE': 'sql_server.pyodbc',
+        'NAME':'test',
+        'HOST':'DESKTOP-8FD1NOD\SQLEXPRESS',
+        'PORT':'49172',
+        'USER':'test3',
+        'PASSWORD':'P@ssw0rd',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
     }
 }
 

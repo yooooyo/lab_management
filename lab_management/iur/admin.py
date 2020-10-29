@@ -14,8 +14,9 @@ admin.site.enable_nav_sidebar = True
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    search_fields = ('name',)
+    search_fields = ('usernameincompany',)
     pass
+
 
 @admin.register(UutPhase)
 class UutPhaseAdmin(admin.ModelAdmin):
@@ -66,10 +67,11 @@ class PlatformAdmin(admin.ModelAdmin):
 class UutBorrowHistoryAdmin(admin.ModelAdmin):
     list_display = ('uut','member','rent_time','back_time')
     fields = ('uut','member','back_time','purpose')
-    search_fields=('member__name','uut__sn',)
+    search_fields=('member__usernameincompany','uut__sn',)
     raw_id_fields = ('uut','member')
     autocomplete_fields=('uut','member')
     pass
+
 
 @admin.register(Uut)
 class UutAdmin(admin.ModelAdmin):
@@ -80,13 +82,14 @@ class UutAdmin(admin.ModelAdmin):
     ###  settings list objects
     # list_max_show_all = 50
     list_per_page = 20
-    list_display = ('id','platform','phase','sku','sn','borrower_display','status','scrap','scrap_reason','position','cpu','remark','keyin_time')
+    list_display = ('id','platform','platform_group_display','platform_target_display','platform_cycle_display','phase','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
     # list_editable = ('position','cpu','remark')
-    # list_editable = ('cpu',)
-    list_filter = ('phase','scrap','position','status')
+    list_filter = ('scrap','phase','status','platform__group','platform__target','position')
     date_hierarchy ='keyin_time'
     list_display_links = ('sn',)
-    search_fields = ('sn','platform__codename','uutborrowhistory__member__name')
+    search_fields = ('sn','platform__codename','uutborrowhistory__member__usernameincompany')
+    # search_fields = ('sn','platform__codename',)
+
     show_full_result_count = True
     # radio_fields = {"phase":admin.VERTICAL}
 
@@ -128,11 +131,26 @@ class UutAdmin(admin.ModelAdmin):
 
     def borrower_display(self,obj):
         borrower = obj.uutborrowhistory_set.filter(back_time__isnull=True).last()
-        if borrower: return borrower.member.name
+        if borrower: return borrower.member.usernameincompany
         return '-'
-    borrower_display.short_description = 'Borrower'
+    borrower_display.short_description = 'BORROWER'
     # borrower_display.admin_order_field = 'uutborrowhistory__member__name'
 
+    def platform_group_display(self,obj):
+        return obj.platform.group
+    platform_group_display.short_description = 'GROUP'
+    platform_group_display.admin_order_field='platform__group'
+
+
+    def platform_target_display(self,obj):
+        return obj.platform.target
+    platform_target_display.short_description = 'TARGET'
+    platform_target_display.admin_order_field='platform__target'
+
+    def platform_cycle_display(self,obj):
+        return obj.platform.cycle
+    platform_cycle_display.short_description = 'CYCLE'
+    platform_cycle_display.admin_order_field='platform__cycle'
 
     #override
     # def save_model(self, request, obj, form, change):
@@ -193,19 +211,26 @@ class UutAdmin(admin.ModelAdmin):
             sku_list = request.POST.getlist('sku')
             position_list = request.POST.getlist('position')
             for sn,sku,position in zip(sn_list,sku_list,position_list):
-                Uut.objects.create(sn = sn,sku=sku,position=position,phase = obj.phase,platform=obj.platform)
-            self.message_user(request,f'{len(sn_list)} uut be added.',messages.SUCCESS)
+                if sn:
+                    Uut.objects.create(sn = sn,sku=sku,position=position,phase = obj.phase,platform=obj.platform)
+                else:
+                    messages.error(request,'SN empty !')
             return
+            # self.message_user(request,f'{len(sn_list)} uut be added.',messages.SUCCESS)
         return super().save_model(request, obj, form, change)
+
     change_list_template = 'admin/uut_changelist_template.html'
+
+    def get_list_display_links(self, request, list_display):
+        return super().get_list_display_links(request, list_display)        
 
     def get_search_results(self,request,queryset,term):
         def exclude_borrower_has_returned_uut(qs,term):
             _qs = qs
-            member_lookup = Member.objects.filter(name__search=term)
+            member_lookup = Member.objects.filter(usernameincompany__search=term)
             if member_lookup.count()>0:
                 for uut in qs:
-                    u = uut.uutborrowhistory_set.filter(member__name__search=term).filter(back_time__isnull=True).last()
+                    u = uut.uutborrowhistory_set.filter(member__usernameincompany__search=term).filter(back_time__isnull=True).last()
                     if not u:
                         _qs = _qs.exclude(sn=uut.sn)
             return _qs
@@ -216,8 +241,10 @@ class UutAdmin(admin.ModelAdmin):
         
         return qs,use_distinct
 
-    def get_changelist_form(self, request, **kwargs):
-        return super().get_changelist_form(request, **kwargs)
+    def get_urls(self):
+        return super().get_urls()
+
+
 
     
 

@@ -6,7 +6,16 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
+from django.conf import settings
+import uuid
+from django.contrib.auth.models import Group,User
 
+class Member(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE,)
+    usernameincompany = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.usernameincompany
 
 class Ap(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -25,31 +34,30 @@ class Ap(models.Model):
     network_technology_standard = models.CharField(max_length=50, blank=True, null=True)
     admin_id = models.CharField(max_length=50, blank=True, null=True)
     admin_pw = models.CharField(max_length=50, blank=True, null=True)
-    ssid_2_4 = models.CharField(db_column='ssid_2.4', max_length=50)  # Field renamed to remove unsuitable characters.
-    ssid_2_4_password = models.CharField(db_column='ssid_2.4_password', max_length=50)  # Field renamed to remove unsuitable characters.
-    ssid_2_4_bssid = models.CharField(db_column='ssid_2.4_bssid', max_length=50, blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    ssid_2_4_band = models.CharField(db_column='ssid_2.4_band', max_length=50, blank=True, null=True)  # Field renamed to remove unsuitable characters.
+    ssid_2_4 = models.CharField(db_column='ssid_2d4', max_length=50)  # Field renamed to remove unsuitable characters.
+    ssid_2_4_password = models.CharField(db_column='ssid_2d4_password', max_length=50)  # Field renamed to remove unsuitable characters.
+    ssid_2_4_bssid = models.CharField(db_column='ssid_2d4_bssid', max_length=50, blank=True, null=True)  # Field renamed to remove unsuitable characters.
+    ssid_2_4_band = models.CharField(db_column='ssid_2d4_band', max_length=50, blank=True, null=True)  # Field renamed to remove unsuitable characters.
     ssid_5 = models.CharField(max_length=50, blank=True, null=True)
     ssid_5_password = models.CharField(max_length=50, blank=True, null=True)
     ssid_5_bssid = models.CharField(max_length=50, blank=True, null=True)
     ssid_5_band = models.CharField(max_length=50, blank=True, null=True)
     fw = models.CharField(max_length=100, blank=True, null=True)
     remark = models.TextField(blank=True, null=True)
-
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ap'
 
 
 class ApBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
-    borrower = models.ForeignKey('Member', models.DO_NOTHING)
+    borrower = models.ForeignKey(Member,on_delete=models.CASCADE,)
     ap = models.ForeignKey(Ap, models.DO_NOTHING)
     rent_time = models.DateTimeField()
     back_time = models.TimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ap_borrow_history'
 
 
@@ -74,44 +82,29 @@ class Dashboard(models.Model):
     status = models.CharField(max_length=50, blank=True, null=True)
     join_tiom = models.DateTimeField()
     alive_time = models.DurationField(blank=True, null=True)
-    dashboard_uuid = models.UUIDField()
+    dashboard_uuid = models.UUIDField(default=uuid.uuid4())
     group_name = models.CharField(max_length=50, blank=True, null=True)
-    unit_manager = models.ForeignKey('Member', models.DO_NOTHING, db_column='unit_manager')
+    unit_manager = models.ForeignKey( Member,on_delete=models.CASCADE,)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dashboard'
 
 
 class Driver(models.Model):
     id = models.BigAutoField(primary_key=True)
-    owner = models.ForeignKey('Member', models.DO_NOTHING, db_column='owner')
+    owner = models.ForeignKey( Member,on_delete=models.CASCADE,)
     name = models.TextField()
     version = models.CharField(max_length=50)
     release_time = models.TimeField()
-    path = models.TextField(blank=True, null=True)  # This field type is a guess.
+    path = models.FileField(null=True)  # This field type is a guess.
     category = models.CharField(max_length=50, blank=True, null=True)
     package_name = models.TextField(unique=True, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'driver'
 
-
-class Member(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=50)
-    gender = models.CharField(max_length=50, blank=True, null=True)
-    birth = models.DateField(blank=True, null=True)
-    mail = models.CharField(unique=True, max_length=50)
-    enabled = models.BooleanField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'member'
-
-    def __str__(self):
-        return self.name
 
 class Module(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -122,11 +115,11 @@ class Module(models.Model):
     subsys_device_id = models.CharField(max_length=50, blank=True, null=True)
     subsys_vender_id = models.CharField(max_length=50, blank=True, null=True)
     category = models.CharField(max_length=50, blank=True, null=True)
-    owner = models.ForeignKey(Member, models.DO_NOTHING)
+    owner = models.ForeignKey( Member,on_delete=models.CASCADE,)
     support_driver = models.ForeignKey(Driver, models.DO_NOTHING)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'module'
 
 
@@ -154,12 +147,12 @@ class Platform(models.Model):
     forecast_series = models.CharField(max_length=200, blank=True, null=True)
     chipset = models.CharField(max_length=200, blank=True, null=True,help_text='ex: Tiger Lake/Coffee Lake')
     marketing_name = models.CharField(max_length=200, blank=True, null=True,help_text='ex: HP Elitebook 830 G5')
-    odm = models.CharField(db_column='ODM', max_length=50, blank=True, null=True,help_text = 'ex: IEC/QUANTA')  # Field name made lowercase.
-    sepm = models.CharField(db_column='SEPM', max_length=50, blank=True, null=True)  # Field name made lowercase.
-    pdm = models.CharField(db_column='PDM', max_length=50, blank=True, null=True)  # Field name made lowercase.
-
+    odm = models.CharField(db_column='odm', max_length=50, blank=True, null=True,help_text = 'ex: IEC/QUANTA')  
+    sepm = models.CharField(db_column='sepm', max_length=50, blank=True, null=True)  
+    pdm = models.CharField(db_column='pdm', max_length=50, blank=True, null=True)  
+    config = models.URLField(null=True,help_text = 'Platform configs file')
     class Meta:
-        managed = False
+        managed = True
         db_table = 'platform'
 
     def __str__(self):
@@ -170,18 +163,18 @@ class Script(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.TextField()
     tool = models.ForeignKey('Tool', models.DO_NOTHING, blank=True, null=True)
-    wwan = models.TextField()  # This field type is a guess.
-    wlan = models.TextField()  # This field type is a guess.
-    bt = models.TextField()  # This field type is a guess.
-    lan = models.TextField()  # This field type is a guess.
-    rfid = models.TextField()  # This field type is a guess.
-    nfc = models.TextField()  # This field type is a guess.
-    path = models.TextField(blank=True, null=True)  # This field type is a guess.
+    wwan = models.BooleanField() 
+    wlan = models.BooleanField()  
+    bt = models.BooleanField()  
+    lan = models.BooleanField()  
+    rfid = models.BooleanField()  
+    nfc = models.BooleanField()  
+    path = models.FileField(null=True)  
     create_time = models.DateTimeField()
     version = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'script'
 
     def __str__(self):
@@ -199,11 +192,11 @@ class Task(models.Model):
     period = models.DurationField(blank=True, null=True)
     ap = models.ForeignKey(Ap, models.DO_NOTHING, blank=True, null=True)
     summary = models.TextField()
-    task_uuid = models.UUIDField()
-    assigner = models.ForeignKey(Member, models.DO_NOTHING, db_column='assigner')
+    task_uuid = models.UUIDField(default=uuid.uuid4)
+    assigner = models.ForeignKey( Member,on_delete=models.CASCADE,)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'task'
 
 
@@ -211,10 +204,10 @@ class Tool(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
     version = models.CharField(max_length=50, blank=True, null=True)
-    path = models.TextField(blank=True, null=True)  # This field type is a guess.
+    path = models.FileField(null=True)  # This field type is a guess.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tool'
 
     def __str__(self):
@@ -223,7 +216,7 @@ class Tool(models.Model):
 class Uut(models.Model):
     id = models.BigAutoField(primary_key=True)
     platform = models.ForeignKey('Platform', models.DO_NOTHING, blank=True, null=True, )
-    sn = models.CharField(unique=True, max_length=50,blank=True,)
+    sn = models.CharField(unique=True, max_length=50, null=False, blank=False)
     sku = models.CharField(max_length=50, blank=True, null=True,)
     cpu = models.CharField(max_length=50, blank=True, null=True)
     STATUS_CHOICE = [   
@@ -236,11 +229,12 @@ class Uut(models.Model):
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     scrap = models.BooleanField(default=False,)
-    keyin_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
+    # keyin_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
+    keyin_time = models.DateTimeField(blank=True, null=True)
     phase = models.ForeignKey('UutPhase', models.DO_NOTHING, db_column='phase', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'uut'
 
     def __str__(self):
@@ -248,14 +242,15 @@ class Uut(models.Model):
 
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
-    member = models.ForeignKey(Member, models.DO_NOTHING)
-    rent_time = models.DateTimeField(auto_now=True)
+    member = models.ForeignKey(Member,on_delete=models.CASCADE,)
+    # rent_time = models.DateTimeField(auto_now=True)
+    rent_time = models.DateTimeField(blank=True, null=True)
     back_time = models.DateTimeField(blank=True, null=True)
     uut = models.ForeignKey(Uut, models.DO_NOTHING)
     purpose = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'uut_borrow_history'
 
     def __str__(self):
@@ -269,8 +264,12 @@ class UutPhase(models.Model):
     phase_text = models.CharField(max_length=30, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'uut_phase'
 
     def __str__(self):
         return self.phase_text
+
+
+    
+

@@ -85,8 +85,20 @@
                 deleteLinkPreviousSibling.remove();
             }
             obj.parentNode.parentNode.remove();
+            
         }
-
+        
+        
+        document.onreadystatechange = () => {
+            if (document.readyState === 'complete') {
+                window.onkeydown = (function(event){
+                    if(event.keyCode == 13){
+                        event.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        };
     </script>
 {% endblock field_sets %}
 
