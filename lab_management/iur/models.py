@@ -213,25 +213,58 @@ class Tool(models.Model):
     def __str__(self):
         return self.name
 
+class UutPhase(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    phase_text = models.CharField(max_length=30,null=True,unique=True)
+
+    class Meta:
+        managed = True
+        db_table = 'uut_phase'
+        ordering = ['-phase_text',]
+
+    def __str__(self):
+        return self.phase_text
+
+class UutStatus(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    status_text = models.CharField(max_length=30,null=True,unique=True)
+
+    class Meta:
+        managed = True
+        db_table='uut_status'
+
+    def __str__(self):
+        return self.status_text
+
+    
+
 class Uut(models.Model):
     id = models.BigAutoField(primary_key=True)
     platform = models.ForeignKey('Platform', models.DO_NOTHING, blank=True, null=True, )
     sn = models.CharField(unique=True, max_length=50, null=False, blank=False)
     sku = models.CharField(max_length=50, blank=True, null=True,)
     cpu = models.CharField(max_length=50, blank=True, null=True)
-    STATUS_CHOICE = [   
-        ('KEEP ON','Keep On'),
-        ('RENT','Rent'),
-        ('RETURN 8F','Return 8F'),
-    ]
-    status = models.CharField(max_length=50,choices = STATUS_CHOICE,default=STATUS_CHOICE[0][1])
+    # STATUS_CHOICE = [   
+    #     ('KEEP ON','Keep On'),
+    #     ('RENT','Rent'),
+    #     ('RETURN 8F','Return 8F'),
+    # ]
+    # status = models.ForeignKey(max_length=50,choices = STATUS_CHOICE,default=STATUS_CHOICE[0][1])
+    status_default = UutStatus.objects.filter(status_text='Keep On')
+    if status_default.count() == 0:
+        status_default = UutStatus.objects.create(status_text='Keep On')
+        status_default.save()
+    else:
+        status_default = status_default.first()
+    status = models.ForeignKey(UutStatus, models.DO_NOTHING, db_column='status',blank=True, null=True,default = status_default.id )
+
     scrap_reason = models.TextField(blank=True, null=True,)
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     scrap = models.BooleanField(default=False,)
     # keyin_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     keyin_time = models.DateTimeField(blank=True, null=True)
-    phase = models.ForeignKey('UutPhase', models.DO_NOTHING, db_column='phase', blank=True, null=True)
+    phase = models.ForeignKey(UutPhase, models.DO_NOTHING, db_column='phase', blank=True, null=True)
 
     class Meta:
         managed = True
@@ -252,6 +285,7 @@ class UutBorrowHistory(models.Model):
     class Meta:
         managed = True
         db_table = 'uut_borrow_history'
+        ordering=['rent_time',]
 
     def __str__(self):
         return f"{self.id} {self.uut} {self.member} '{self.rent_time}' '{self.back_time}''"
@@ -259,16 +293,7 @@ class UutBorrowHistory(models.Model):
 
 
 
-class UutPhase(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    phase_text = models.CharField(max_length=30, blank=True, null=True)
 
-    class Meta:
-        managed = True
-        db_table = 'uut_phase'
-
-    def __str__(self):
-        return self.phase_text
 
 
     

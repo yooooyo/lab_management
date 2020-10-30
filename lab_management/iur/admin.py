@@ -1,8 +1,11 @@
 from django.contrib import admin,messages
 from django.utils.translation import ngettext
-from .models import Uut,Platform,UutBorrowHistory,UutPhase,Member
-
 from django.contrib.auth.models import Group,User
+from django.utils.html import format_html
+from django.shortcuts import render
+from django.http import HttpResponse
+
+from .models import Uut,Platform,UutBorrowHistory,UutPhase,Member,UutStatus
 # Register your models here.
 
 admin.site.site_header = 'Lab Admin'
@@ -12,11 +15,14 @@ admin.site.enable_nav_sidebar = True
 # admin.site.unregister(User)
 # admin.site.unregister(Group)
 
+@admin.register(UutStatus)
+class UutStatusAdmin(admin.ModelAdmin):
+    pass
+
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
     search_fields = ('usernameincompany',)
     pass
-
 
 @admin.register(UutPhase)
 class UutPhaseAdmin(admin.ModelAdmin):
@@ -33,9 +39,6 @@ class UutInline(admin.TabularInline):
             
         }),
     )
-
-
-    
 
 @admin.register(Platform)
 class PlatformAdmin(admin.ModelAdmin):
@@ -72,7 +75,6 @@ class UutBorrowHistoryAdmin(admin.ModelAdmin):
     autocomplete_fields=('uut','member')
     pass
 
-
 @admin.register(Uut)
 class UutAdmin(admin.ModelAdmin):
 
@@ -82,7 +84,7 @@ class UutAdmin(admin.ModelAdmin):
     ###  settings list objects
     # list_max_show_all = 50
     list_per_page = 20
-    list_display = ('id','platform','platform_group_display','platform_target_display','platform_cycle_display','phase','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
+    list_display = ('id','platform_with_link','platform_group_display','platform_target_display','platform_cycle_display','phase','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
     # list_editable = ('position','cpu','remark')
     list_filter = ('scrap','phase','status','platform__group','platform__target','position')
     date_hierarchy ='keyin_time'
@@ -124,25 +126,34 @@ class UutAdmin(admin.ModelAdmin):
 
 
     def colored_phase(self,obj):
-        from django.utils.html import format_html
+        
         return format_html(f'<span style="color: blue">{obj.phase}</span>')
     colored_phase.short_description = 'PHASE'
     colored_phase.admin_order_field = 'phase'
 
     def borrower_display(self,obj):
+        import time
         borrower = obj.uutborrowhistory_set.filter(back_time__isnull=True).last()
-        if borrower: return borrower.member.usernameincompany
+        if borrower: 
+            template = f'{borrower.member.usernameincompany}<br><small style="color:gray;">{borrower.rent_time}</small>'
+            return format_html(template)
         return '-'
     borrower_display.short_description = 'BORROWER'
     # borrower_display.admin_order_field = 'uutborrowhistory__member__name'
+
+    def platform_with_link(self,obj):
+        template = f'<b><a href="/iur/platform/{obj.platform.id}/change/">{obj.platform.codename}</a></b>'
+        return format_html(template)
+    platform_with_link.short_description='PLATFORM'
+    platform_with_link.admin_order_field='platform'
 
     def platform_group_display(self,obj):
         return obj.platform.group
     platform_group_display.short_description = 'GROUP'
     platform_group_display.admin_order_field='platform__group'
 
-
     def platform_target_display(self,obj):
+
         return obj.platform.target
     platform_target_display.short_description = 'TARGET'
     platform_target_display.admin_order_field='platform__target'
@@ -192,13 +203,9 @@ class UutAdmin(admin.ModelAdmin):
     mark_unscrap.short_description = 'UnScrap'
 
     def edit_uuts(self,request,queryset):
-        self.get_search_results(request,queryset,'')
-    edit_uuts.short_description = 'Edit UUTs'
 
-    # def make_edit(self,request,queryset,**kwargs):
-    #     self.list_editable = ('position','cpu','remark','scrap','status','sku','phase','platform')
-    #     self.lookup_allowed()
-    # make_edit.short_description = 'Edit UUTs' 
+        pass
+    edit_uuts.short_description = 'Edit UUTs'
 
 
     # custom view
@@ -220,6 +227,8 @@ class UutAdmin(admin.ModelAdmin):
         return super().save_model(request, obj, form, change)
 
     change_list_template = 'admin/uut_changelist_template.html'
+
+    change_list_object_tools_template = 'admin/uut_change_list_object_tools.html'
 
     def get_list_display_links(self, request, list_display):
         return super().get_list_display_links(request, list_display)        
