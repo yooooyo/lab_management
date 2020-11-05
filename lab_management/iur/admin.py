@@ -1,10 +1,11 @@
 from django.contrib import admin,messages
-from django.utils.translation import ngettext
 from django.contrib.auth.models import Group,User
 from django.utils.html import format_html
+from django.utils.translation import ngettext
+from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render
-from django.http import HttpResponse
-
+from django.template.response import TemplateResponse
+from django.db.models import Q
 from .models import Uut,Platform,UutBorrowHistory,UutPhase,Member,UutStatus
 # Register your models here.
 
@@ -79,7 +80,7 @@ class UutBorrowHistoryAdmin(admin.ModelAdmin):
 class UutAdmin(admin.ModelAdmin):
 
     #### settings
-    using = 'labpostgres' 
+    # using = 'labpostgres' 
 
     ###  settings list objects
     # list_max_show_all = 50
@@ -119,7 +120,7 @@ class UutAdmin(admin.ModelAdmin):
         # }),
         (None,{
             "fields":(
-                'phase','platform',
+                'phase','platform','status'
             )
         }),
     )
@@ -132,7 +133,6 @@ class UutAdmin(admin.ModelAdmin):
     colored_phase.admin_order_field = 'phase'
 
     def borrower_display(self,obj):
-        import time
         borrower = obj.uutborrowhistory_set.filter(back_time__isnull=True).last()
         if borrower: 
             template = f'{borrower.member.usernameincompany}<br><small style="color:gray;">{borrower.rent_time}</small>'
@@ -142,24 +142,35 @@ class UutAdmin(admin.ModelAdmin):
     # borrower_display.admin_order_field = 'uutborrowhistory__member__name'
 
     def platform_with_link(self,obj):
-        template = f'<b><a href="/iur/platform/{obj.platform.id}/change/">{obj.platform.codename}</a></b>'
-        return format_html(template)
+        if obj.platform:
+            template = f'<b><a href="/iur/platform/{obj.platform.id}/change/">{obj.platform.codename}</a></b>'
+            return format_html(template)
+        else:
+            return '-'
     platform_with_link.short_description='PLATFORM'
     platform_with_link.admin_order_field='platform'
 
     def platform_group_display(self,obj):
-        return obj.platform.group
+        if obj.platform:
+            return obj.platform.group
+        else:
+            return '-'
     platform_group_display.short_description = 'GROUP'
     platform_group_display.admin_order_field='platform__group'
 
     def platform_target_display(self,obj):
-
-        return obj.platform.target
+        if obj.platform:
+            return obj.platform.target
+        else:
+            return '-'
     platform_target_display.short_description = 'TARGET'
     platform_target_display.admin_order_field='platform__target'
 
     def platform_cycle_display(self,obj):
-        return obj.platform.cycle
+        if obj.platform:
+            return obj.platform.cycle
+        else:
+            return '-'
     platform_cycle_display.short_description = 'CYCLE'
     platform_cycle_display.admin_order_field='platform__cycle'
 
@@ -187,9 +198,8 @@ class UutAdmin(admin.ModelAdmin):
     #     return super().formfield_for_manytomany(db_field, request, using=self.using, **kwargs)
 
 
-
     # actions
-    actions = ['mark_scrap','mark_unscrap','make_edit','edit_uuts']
+    actions = ['mark_scrap','mark_unscrap','edit_uuts']
 
     def mark_scrap(self,request,queryset):
         be_updated = queryset.update(scrap = True)
@@ -202,38 +212,36 @@ class UutAdmin(admin.ModelAdmin):
         self.message_user(request,ngettext(f'{be_updated} item was mark unscrap',f'{be_updated} items were mark unscrap',be_updated),messages.SUCCESS)
     mark_unscrap.short_description = 'UnScrap'
 
-    def edit_uuts(self,request,queryset):
-
-        pass
-    edit_uuts.short_description = 'Edit UUTs'
-
-
+    # def edit_uuts(self,request,queryset):
+    #     # self.list_editable = ()
+    #     return HttpResponse('edit/',{'uut':queryset})
+    # edit_uuts.short_description = 'Edit UUTs'
     # custom view
 
     add_form_template = 'admin/add_uut_template.html'
 
     def save_model(self, request, obj, form, change):
         if request.method == 'POST' and 'uut-save' in request.POST:
-            sn_list = request.POST.getlist('sn')
-            sku_list = request.POST.getlist('sku')
-            position_list = request.POST.getlist('position')
-            for sn,sku,position in zip(sn_list,sku_list,position_list):
-                if sn:
-                    Uut.objects.create(sn = sn,sku=sku,position=position,phase = obj.phase,platform=obj.platform)
-                else:
-                    messages.error(request,'SN empty !')
+            if not obj.platform or not obj.phase:
+                messages.error(request,'Platform or phase empty !')
+            else:
+                sn_list = request.POST.getlist('sn')
+                sku_list = request.POST.getlist('sku')
+                position_list = request.POST.getlist('position')
+                for sn,sku,position in zip(sn_list,sku_list,position_list):
+                    if sn:
+                        Uut.objects.create(sn = sn,sku=sku,position=position,phase = obj.phase,platform=obj.platform)
+                    else:
+                        messages.error(request,'SN empty !')
             return
             # self.message_user(request,f'{len(sn_list)} uut be added.',messages.SUCCESS)
+        if self.list_editable:
+            self.list_editable = None
         return super().save_model(request, obj, form, change)
 
-    change_list_template = 'admin/uut_changelist_template.html'
-
-    change_list_object_tools_template = 'admin/uut_change_list_object_tools.html'
-
-    def get_list_display_links(self, request, list_display):
-        return super().get_list_display_links(request, list_display)        
-
+    change_list_template = 'admin/uut_changelist_template.html'      
     def get_search_results(self,request,queryset,term):
+        print('get_search_results')
         def exclude_borrower_has_returned_uut(qs,term):
             _qs = qs
             member_lookup = Member.objects.filter(usernameincompany__search=term)
@@ -243,15 +251,79 @@ class UutAdmin(admin.ModelAdmin):
                     if not u:
                         _qs = _qs.exclude(sn=uut.sn)
             return _qs
-        
+        # self.get_search_results(request,queryset)
         qs ,use_distinct = super().get_search_results(request,queryset,term)
+        if 'search-adv' in request.POST:
+            
+            selected_platform_id = request.POST.getlist('selectPlatform',None)
+            selected_borrower_id = request.POST.getlist('selectBorrower',None)
+            p = qs.filter(platform__in=selected_platform_id)
+            b = qs.filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)&Q(uutborrowhistory__member__in=selected_borrower_id))
+            qs = p|b
+        print(len(qs))
         qs = exclude_borrower_has_returned_uut(qs,term)
-
-        
         return qs,use_distinct
 
+    def changelist_view(self, request, extra_context=None):
+
+        changelist_view = super().changelist_view(request, extra_context)
+        changelist_view.context_data['title'] = 'IUR'
+        
+        class Dropdown:
+            self.buttonName=''
+            self.dataList=list()
+            def __init__(self,buttonName,dataList):
+                self.buttonName = buttonName
+                self.dataList = dataList
+
+
+        platform = changelist_view.context_data['cl'].queryset.order_by('platform__codename').values_list('platform','platform__codename').distinct()
+        platform = Dropdown('Platform',platform)
+        borrower = changelist_view.context_data['cl'].queryset.order_by('uutborrowhistory__member__usernameincompany').filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)).values_list('uutborrowhistory__member','uutborrowhistory__member__usernameincompany').distinct()
+        borrower = Dropdown('Borrower',borrower)
+        dropdown={'dropdown':[platform,borrower]}
+
+        changelist_view.context_data.update(dropdown)
+        return changelist_view
+
+    # def get_changelist_instance(self, request):
+    #     change_instance = super().get_changelist_instance(request)
+    #     # change_instance.result_list = change_instance.result_list.filter(pk=2)
+    #     return change_instance
+
+    def response_add(self, request, obj, post_url_continue=None):
+        add = super().response_add(request, obj, post_url_continue=post_url_continue) 
+        
+        return add
+
+    def get_queryset(self, request):
+        # initial load UUT
+        qs = super().get_queryset(request)
+        print(f'get queryset {len(qs)}')
+        return qs
+
     def get_urls(self):
-        return super().get_urls()
+        # add custome url here
+        print('get_urls')
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('edit/', self.admin_site.admin_view(self.edit_uut)),
+        ]
+        print(urls)
+        return custom_urls+urls
+
+    
+
+    def edit_uut(self,request):
+        
+        return TemplateResponse(request,'admin/uut_base_site.html')
+
+
+
+
+
+    
 
 
 

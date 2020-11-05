@@ -273,6 +273,14 @@ class Uut(models.Model):
     def __str__(self):
         return self.sn
 
+    @property
+    def borrower(self):
+        borrower = self.uutborrowhistory_set.filter(back_time__isnull=True).last()
+        if borrower:
+            return borrower.member.usernameincompany
+        else:
+            return None
+
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
     member = models.ForeignKey(Member,on_delete=models.CASCADE,)
