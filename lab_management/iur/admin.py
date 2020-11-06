@@ -253,37 +253,31 @@ class UutAdmin(admin.ModelAdmin):
             return _qs
         # self.get_search_results(request,queryset)
         qs ,use_distinct = super().get_search_results(request,queryset,term)
-        if 'search-adv' in request.POST:
-            
-            selected_platform_id = request.POST.getlist('selectPlatform',None)
-            selected_borrower_id = request.POST.getlist('selectBorrower',None)
-            p = qs.filter(platform__in=selected_platform_id)
-            b = qs.filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)&Q(uutborrowhistory__member__in=selected_borrower_id))
-            qs = p|b
-        print(len(qs))
         qs = exclude_borrower_has_returned_uut(qs,term)
         return qs,use_distinct
 
     def changelist_view(self, request, extra_context=None):
 
         changelist_view = super().changelist_view(request, extra_context)
-        changelist_view.context_data['title'] = 'IUR'
+        if hasattr(changelist_view,'context_data'):
+            changelist_view.context_data['title'] = 'IUR'
+            
+            class Dropdown:
+                self.buttonName=''
+                self.dataList=list()
+                def __init__(self,buttonName,dataList):
+                    self.buttonName = buttonName
+                    self.dataList = dataList
+
+
+            platform = changelist_view.context_data['cl'].queryset.order_by('platform__codename').values_list('platform','platform__codename').distinct()
+            platform = Dropdown('Platform',platform)
+            borrower = changelist_view.context_data['cl'].queryset.order_by('uutborrowhistory__member__usernameincompany').filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)).values_list('uutborrowhistory__member','uutborrowhistory__member__usernameincompany').distinct()
+            borrower = Dropdown('Borrower',borrower)
+            dropdown={'dropdown':[platform,borrower]}
+
+            changelist_view.context_data.update(dropdown)
         
-        class Dropdown:
-            self.buttonName=''
-            self.dataList=list()
-            def __init__(self,buttonName,dataList):
-                self.buttonName = buttonName
-                self.dataList = dataList
-
-
-        platform = changelist_view.context_data['cl'].queryset.order_by('platform__codename').values_list('platform','platform__codename').distinct()
-        platform = Dropdown('Platform',platform)
-        borrower = changelist_view.context_data['cl'].queryset.order_by('uutborrowhistory__member__usernameincompany').filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)).values_list('uutborrowhistory__member','uutborrowhistory__member__usernameincompany').distinct()
-        borrower = Dropdown('Borrower',borrower)
-        dropdown={'dropdown':[platform,borrower]}
-
-        changelist_view.context_data.update(dropdown)
         return changelist_view
 
     # def get_changelist_instance(self, request):
@@ -299,6 +293,17 @@ class UutAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # initial load UUT
         qs = super().get_queryset(request)
+        request.GET = request.GET.copy()
+        selected_platform_id = request.GET.pop('selectPlatform',None)
+        if selected_platform_id:
+            qs = qs|qs.filter(platform__in=selected_platform_id)
+        # if 'search_adv' in request.GET:
+        #     # can't remember last query
+        #     selected_platform_id = request.GET.getlist('selectPlatform',None)
+        #     selected_platform_id = request.GET.getlist('selectBorrower',None)
+        #     p = qs.filter(platform__in=selected_platform_id)
+        #     b = qs.filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)&Q(uutborrowhistory__member__in=selected_borrower_id))
+        #     qs = p|b
         print(f'get queryset {len(qs)}')
         return qs
 

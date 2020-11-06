@@ -53,7 +53,9 @@
 
 {% block search %}
 {{ block.super }}
-<form id='changelist-adv-search' method='post'>
+
+
+<form id='changelist-adv-search' method='get'>
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#advsearch-modal">
         Advance Filter
     </button>
@@ -87,7 +89,7 @@
                     <div class="dropdowndata">
                     {% if dlist.dataList %}
                         {% for id,data in dlist.dataList %}
-                            <li >
+                            <li value="{{ id }}">
                             <label>
                             <input type="checkbox" name="select{{ dlist.buttonName }}" value="{{ id }}"> 
                                 {{ data }}
@@ -104,8 +106,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    {% csrf_token %}
-                    <button type="submit" name='search-adv' value='search-adv' class="btn btn-primary">Search</button>
+                    {% comment %} {% csrf_token %} {% endcomment %}
+                    <button type="submit" name='search_adv' value='search_adv' class="btn btn-primary">Search</button>
                 </div>
                 </div>
             </div>
