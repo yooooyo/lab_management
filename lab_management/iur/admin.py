@@ -239,9 +239,9 @@ class UutAdmin(admin.ModelAdmin):
             self.list_editable = None
         return super().save_model(request, obj, form, change)
 
-    change_list_template = 'admin/uut_changelist_template.html'      
+    change_list_template = 'admin/uut_changelist_template.html'   
+
     def get_search_results(self,request,queryset,term):
-        print('get_search_results')
         def exclude_borrower_has_returned_uut(qs,term):
             _qs = qs
             member_lookup = Member.objects.filter(usernameincompany__search=term)
@@ -251,34 +251,114 @@ class UutAdmin(admin.ModelAdmin):
                     if not u:
                         _qs = _qs.exclude(sn=uut.sn)
             return _qs
-        # self.get_search_results(request,queryset)
         qs ,use_distinct = super().get_search_results(request,queryset,term)
-        qs = exclude_borrower_has_returned_uut(qs,term)
+
+        if term:            
+            qs = exclude_borrower_has_returned_uut(qs,term)
         return qs,use_distinct
 
-    def changelist_view(self, request, extra_context=None):
+    saved_dropdown_dict = dict()
 
-        changelist_view = super().changelist_view(request, extra_context)
-        if hasattr(changelist_view,'context_data'):
-            changelist_view.context_data['title'] = 'IUR'
+
+    def advance_search_dropdown_filter(self,qs):
+        class Dropdown:
+            template=''
+            default=[]
+            saved=[]
+            def __init__(self,buttonName,dataList,default=[]):
+                self.buttonName = buttonName
+                self.dataList = dataList
+                self.default = default
+
             
-            class Dropdown:
-                self.buttonName=''
-                self.dataList=list()
-                def __init__(self,buttonName,dataList):
-                    self.buttonName = buttonName
-                    self.dataList = dataList
+            def format_html(self):
+                if self.dataList:
+                    for Id,data in self.dataList:
+                        if str(Id) in self.saved or data in self.default:
+                            self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data}</label></li>'
+                        else:
+                            self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}"> {data}</label></li>'
+                    return format_html(self.template)
+            
+            def keep_filter_list(self,selected_list):
+                if not selected_list and self.saved:
+                    return self.saved
 
 
-            platform = changelist_view.context_data['cl'].queryset.order_by('platform__codename').values_list('platform','platform__codename').distinct()
-            platform = Dropdown('Platform',platform)
-            borrower = changelist_view.context_data['cl'].queryset.order_by('uutborrowhistory__member__usernameincompany').filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)).values_list('uutborrowhistory__member','uutborrowhistory__member__usernameincompany').distinct()
-            borrower = Dropdown('Borrower',borrower)
-            dropdown={'dropdown':[platform,borrower]}
+        platform = qs.order_by('platform__codename').values_list('platform','platform__codename').distinct()
+        platform = Dropdown('Platform',platform)
+        self.saved_dropdown_dict.update({'platform':platform})
 
-            changelist_view.context_data.update(dropdown)
+        borrower = qs.order_by('uutborrowhistory__member__usernameincompany').filter(Q(uutborrowhistory__back_time__isnull=True)).values_list('uutborrowhistory__member','uutborrowhistory__member__usernameincompany').distinct()
+        borrower = Dropdown('Borrower',borrower)
+        self.saved_dropdown_dict.update({'borrower':borrower})
+
+        group = qs.values_list('platform__group','platform__group').distinct()
+        group = Dropdown('Group',group)
+        self.saved_dropdown_dict.update({'group':group})
+
+        target = qs.order_by('platform__target').values_list('platform__target','platform__target').distinct()
+        target = Dropdown('Target',target)
+        self.saved_dropdown_dict.update({'target':target})
+
+        cycle = qs.order_by('platform__cycle').values_list('platform__cycle','platform__cycle').distinct()
+        cycle = Dropdown('Cycle',cycle)
+        self.saved_dropdown_dict.update({'cycle':cycle})
+
+        phase = qs.order_by('phase__phase_text').values_list('phase','phase__phase_text').distinct()
+        phase = Dropdown('Phase',phase)
+        self.saved_dropdown_dict.update({'phase':phase})
+
+        sku = qs.order_by('sku').values_list('sku','sku').distinct()
+        sku = Dropdown('SKU',sku)
+        self.saved_dropdown_dict.update({'sku':sku})
+
+        status = qs.order_by('status__status_text').values_list('status','status__status_text').distinct()
+        status = Dropdown('Status',status)
+        self.saved_dropdown_dict.update({'status':status})
+
+        scrap = qs.values_list('scrap','scrap').distinct()
+        scrap = Dropdown('Scrap',scrap,[False,])
+        self.saved_dropdown_dict.update({'scrap':scrap})
+
+        position = qs.order_by('position').values_list('position','position').distinct()
+        position = Dropdown('Position',position)
+        self.saved_dropdown_dict.update({'position':position})
         
+        return [platform,borrower,phase,group,sku,status,scrap,position]
+
+    def changelist_view(self, request, extra_context=None):
+        
+        qs = self.get_queryset(request)
+        
+
+        
+        dropdown = self.advance_search_dropdown_filter(qs)
+        extra_context = dropdown={'dropdown':dropdown}
+        changelist_view = super().changelist_view(request, extra_context)
+        changelist_view.context_data['title'] = 'IUR'
+        # changelist_view.context_data.update(dropdown)
+
+
+        # if request.POST.get('search-adv',False):
+
+        #     selected_platform_id = request.POST.getlist('selectPlatform',None)
+        #     selected_borrower_id = request.POST.getlist('selectBorrower',None)
+        #     if selected_platform_id:
+        #         qs = qs.filter(platform__in=selected_platform_id)
+        #         if selected_borrower_id:
+        #             qs = qs.intersection(qs.filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)&Q(uutborrowhistory__member__in=selected_borrower_id)))
+        #         if qs:
+        #             self.list_per_page = 1000
+        # else:
+        #     self.list_per_page = 20
+        #     selectPlatform_saved = []
+
         return changelist_view
+
+    def get_changelist(self, request, **kwargs):
+        from django.contrib.admin.views.main import ChangeList
+        return ChangeList
 
     # def get_changelist_instance(self, request):
     #     change_instance = super().get_changelist_instance(request)
@@ -289,33 +369,138 @@ class UutAdmin(admin.ModelAdmin):
         add = super().response_add(request, obj, post_url_continue=post_url_continue) 
         
         return add
+    
+    def advance_search_dropdown_filter_query(self,request,qs):
+        if request.POST.get('search-adv',False):
+
+            selected_platform_id = request.POST.getlist('selectPlatform',None)
+            selected_borrower_id = request.POST.getlist('selectBorrower',None)
+            selected_group = request.POST.getlist('selectGroup',None)
+            selected_target = request.POST.getlist('selectTarget',None)
+            selected_cycle = request.POST.getlist('selectCycle',None)
+            selected_phase_id = request.POST.getlist('selectPhase',None)
+            selected_sku = request.POST.getlist('selectSKU',None)
+            selected_status_id = request.POST.getlist('selectStatus',None)
+            selected_scrap = request.POST.getlist('selectScrap',None)
+            selected_position = request.POST.getlist('selectPosition',None)
+
+            # if not selected_platform_id and self.selectPlatform_saved:
+            #     selected_platform_id = self.selectPlatform_saved
+            selected = False
+            if selected_platform_id:
+                # self.selectPlatform_saved = selected_platform_id
+                selected = True
+                b =self.saved_dropdown_dict.get('platform',None)
+                if b: b.saved = selected_platform_id
+                qs = qs.filter(platform__in=selected_platform_id)
+
+            if selected_borrower_id:
+                selected = True
+                b =self.saved_dropdown_dict.get('borrower',None)
+                if b: b.saved = selected_borrower_id
+                if 'None' in selected_borrower_id:
+                    selected_borrower_id.remove('None')
+                    qs = qs.filter(uutborrowhistory__isnull=True)
+                if selected_borrower_id:
+                    qs = qs.filter(Q(uutborrowhistory__back_time__isnull=True)&Q(uutborrowhistory__member__in=selected_borrower_id))
+            if selected_group:
+                selected = True
+                b =self.saved_dropdown_dict.get('group',None)
+                if b: b.saved = selected_borrower_id
+                if 'None' in selected_group:
+                    selected_group.remove('None')
+                    qs = qs.filter(platform__group__isnull=True)
+                if selected_group:
+                    qs = qs.filter(platform__group__in=selected_group)
+            if selected_target:
+                selected = True
+                b =self.saved_dropdown_dict.get('target',None)
+                if b: b.saved = selected_target
+                if 'None' in selected_target:
+                    selected_target.remove('None')
+                    qs = qs.filter(platform__target__isnull=True)
+                if selected_target:
+                    qs = qs.filter(platform__target__in=selected_target)
+            if selected_cycle:
+                selected = True
+                b =self.saved_dropdown_dict.get('cycle',None)
+                if b: b.saved = selected_cycle
+                if 'None' in selected_cycle:
+                    selected_cycle.remove('None')
+                    qs = qs.filter(platform__cycle__isnull=True)
+                if selected_cycle:
+                    qs = qs.filter(platform__cycle__in=selected_cycle)
+            if selected_phase_id:
+                selected = True
+                b =self.saved_dropdown_dict.get('phase',None)
+                if b: b.saved = selected_phase_id
+                if 'None' in selected_phase_id:
+                    selected_phase_id.remove('None')
+                    qs = qs.filter(phase__isnull=True)
+                if selected_phase_id:
+                    qs = qs.filter(phase__in=selected_phase_id)
+            if selected_sku:
+                selected = True
+                b =self.saved_dropdown_dict.get('sku',None)
+                if b: b.saved = selected_sku
+                if 'None' in selected_sku:
+                    selected_sku.remove('None')
+                    qs = qs.filter(sku__isnull=True)
+                if selected_sku:
+                    qs = qs.filter(sku__in = selected_sku)
+            if selected_status_id:
+                selected = True
+                b =self.saved_dropdown_dict.get('status',None)
+                if b: b.saved = selected_status_id
+                if 'None' in selected_status_id:
+                    selected_status_id.remove('None')
+                    qs = qs.filter(status__isnull=True)
+                if selected_status_id:
+                    qs = qs.filter(status__in=selected_status_id)
+            if selected_scrap:
+                selected = True
+                b =self.saved_dropdown_dict.get('scrap',None)
+                if b: b.saved = selected_scrap
+                if selected_scrap:
+                    qs = qs.filter(scrap__in=selected_scrap)
+
+            if selected_position:
+                selected = True
+                b =self.saved_dropdown_dict.get('position',None)
+                if b: b.saved = selected_position
+                if 'None' in selected_position:
+                    selected_position.remove('None')
+                    qs = qs.filter(position__isnull=True)
+                if selected_position:
+                    qs = qs.filter(position__in=selected_position)
+
+            if qs.count() > 20 and selected:
+                self.list_per_page = 1000
+        else:
+            if self.saved_dropdown_dict:
+                for filter in self.saved_dropdown_dict.values():
+                    filter.saved=[]
+            self.list_per_page = 20
+
+        return qs
+
+    
 
     def get_queryset(self, request):
         # initial load UUT
         qs = super().get_queryset(request)
-        request.GET = request.GET.copy()
-        selected_platform_id = request.GET.pop('selectPlatform',None)
-        if selected_platform_id:
-            qs = qs|qs.filter(platform__in=selected_platform_id)
-        # if 'search_adv' in request.GET:
-        #     # can't remember last query
-        #     selected_platform_id = request.GET.getlist('selectPlatform',None)
-        #     selected_platform_id = request.GET.getlist('selectBorrower',None)
-        #     p = qs.filter(platform__in=selected_platform_id)
-        #     b = qs.filter(Q(uutborrowhistory__isnull=False)&Q(uutborrowhistory__back_time__isnull=True)&Q(uutborrowhistory__member__in=selected_borrower_id))
-        #     qs = p|b
-        print(f'get queryset {len(qs)}')
+
+        qs = self.advance_search_dropdown_filter_query(request,qs)
+
         return qs
 
     def get_urls(self):
         # add custome url here
-        print('get_urls')
         from django.urls import path
         urls = super().get_urls()
         custom_urls = [
             path('edit/', self.admin_site.admin_view(self.edit_uut)),
         ]
-        print(urls)
         return custom_urls+urls
 
     
