@@ -158,7 +158,7 @@ $('#changelist-adv-search').keydown(function (e) {
 });
 
 $(".uut-multi-searcher-delete").click(function(){
-    if($(this).length>1){
+    if($(".uut-multi-searcher-delete").length>1){
         $(this).parent(".uut-multi-searcher-cell").remove();
     }
 });

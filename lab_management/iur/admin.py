@@ -336,7 +336,8 @@ class UutAdmin(admin.ModelAdmin):
         dropdown = self.advance_search_dropdown_filter(qs)
         extra_context = dropdown={'dropdown':dropdown}
         changelist_view = super().changelist_view(request, extra_context)
-        changelist_view.context_data['title'] = 'IUR'
+        if hasattr(changelist_view,'context_data'):
+            changelist_view.context_data['title'] = 'IUR'
         # changelist_view.context_data.update(dropdown)
 
 
