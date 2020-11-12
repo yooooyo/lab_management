@@ -372,7 +372,7 @@ class UutAdmin(admin.ModelAdmin):
     
     def advance_search_dropdown_filter_query(self,request,qs):
         if request.POST.get('search-adv',False):
-
+            
             selected_platform_id = request.POST.getlist('selectPlatform',None)
             selected_borrower_id = request.POST.getlist('selectBorrower',None)
             selected_group = request.POST.getlist('selectGroup',None)
@@ -473,6 +473,11 @@ class UutAdmin(admin.ModelAdmin):
                     qs = qs.filter(position__isnull=True)
                 if selected_position:
                     qs = qs.filter(position__in=selected_position)
+
+            selected_sn = request.POST.getlist('selectSn',None)
+            if selected_sn:
+                selected = True
+                qs = qs.filter(sn__in=selected_sn)
 
             if qs.count() > 20 and selected:
                 self.list_per_page = 1000
