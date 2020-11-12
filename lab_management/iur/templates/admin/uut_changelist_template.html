@@ -77,7 +77,7 @@ label.select-all input{
 {{ block.super }}
 <form id='changelist-adv-search' method='post'>
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#advsearch-modal">
-        Advance Filter
+        ADVANCE FILTER
     </button>
 
     <!-- Modal -->
@@ -91,7 +91,6 @@ label.select-all input{
             </button>
         </div>
         <div class="modal-body">
-            {% comment %} add block here {% endcomment %}
             {% block dropdownfilter %}
 
             {% for dlist in dropdown %}
@@ -114,14 +113,6 @@ label.select-all input{
 
                         <div class="dropdowndata">
                         {% if dlist.dataList %}
-                            {% comment %} {% for id,data in dlist.dataList %}
-                                <li >
-                                <label>
-                                <input type="checkbox" name="select{{ dlist.buttonName }}" value="{{ id }}"> 
-                                    {{ data }}
-                                </label>
-                                </li>
-                            {% endfor %} {% endcomment %}
                             {{dlist.format_html}}
                         {% endif %}
                         </div>
@@ -134,7 +125,14 @@ label.select-all input{
             <hr>
             {% endfor %}
             {% endblock %}
-            
+
+            <div class="uut-multi-searcher">
+                <div class = "uut-multi-searcher-cell mb-1">
+                    <input type="text" name="selectSn"  class="uut-multi-searcher-input"  placeholder="Serial Number">
+                    <a href="javascript:void(0);" class="uut-multi-searcher-delete"><img src="/static/admin/img/icon-deletelink.svg" alt="Delete"></a>
+                    <br>
+                </div>
+            </div>
                 </div>
                     <div class="modal-footer">
                         {% csrf_token %}
@@ -151,6 +149,29 @@ label.select-all input{
 
 <script>
 
+
+$('#changelist-adv-search').keydown(function (e) {
+    if (e.keyCode == 13) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+$(".uut-multi-searcher-delete").click(function(){
+    if($(this).length>1){
+        $(this).parent(".uut-multi-searcher-cell").remove();
+    }
+});
+
+$(".uut-multi-searcher-cell").last().on("keydown","input[type='text']",function(e){
+    if(e.which==13){
+        let cloneCell = $(".uut-multi-searcher-cell").last().clone(true)
+        let cloneCellInput = cloneCell.find(".uut-multi-searcher-input");
+        cloneCellInput.val("");
+        cloneCell.appendTo(".uut-multi-searcher");
+        cloneCellInput.focus();
+    }
+});
 
 
 $(".checkbox-menu").on("change", "input[type='checkbox']", function() {
