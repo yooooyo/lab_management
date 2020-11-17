@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.db.models import Q
 from .models import Uut,Platform,UutBorrowHistory,UutPhase,Member,UutStatus
+from django import forms
 # Register your models here.
 
 admin.site.site_header = 'Lab Admin'
@@ -199,7 +200,7 @@ class UutAdmin(admin.ModelAdmin):
 
 
     # actions
-    actions = ['mark_scrap','mark_unscrap','edit_uuts']
+    actions = ['mark_scrap','mark_unscrap','rent_back','edit_uuts','borrow_and_transfer']
 
     def mark_scrap(self,request,queryset):
         be_updated = queryset.update(scrap = True)
@@ -212,10 +213,27 @@ class UutAdmin(admin.ModelAdmin):
         self.message_user(request,ngettext(f'{be_updated} item was mark unscrap',f'{be_updated} items were mark unscrap',be_updated),messages.SUCCESS)
     mark_unscrap.short_description = 'UnScrap'
 
-    # def edit_uuts(self,request,queryset):
-    #     # self.list_editable = ()
-    #     return HttpResponse('edit/',{'uut':queryset})
-    # edit_uuts.short_description = 'Edit UUTs'
+    def rent_back(self,request,queryset):
+        filter_not_borrowed = queryset.filter(uutborrowhistory__isnull=False)
+        for uut in filter_not_borrowed:
+            last_borrow = uut.uutborrowhistory_set.last()
+            from datetime import datetime
+            last_borrow.back_time = datetime.now()
+            uut.status = Uut.status_default
+            uut.save()
+            last_borrow.save()
+    rent_back.short_description = 'Rent Back'
+
+    def edit_uuts(self,request,queryset):
+        # self.list_editable = ()
+        if queryset:
+            ids = '&'.join([ f'id={q.id}' for q in queryset])
+            return HttpResponseRedirect(f'edit/?{ids}')
+    edit_uuts.short_description = 'Edit UUTs'
+
+    def borrow_and_transfer(self,request,queryset):
+        pass
+    borrow_and_transfer.short_description = 'Borrow and Transfer'
     # custom view
 
     add_form_template = 'admin/add_uut_template.html'
@@ -476,12 +494,14 @@ class UutAdmin(admin.ModelAdmin):
                     qs = qs.filter(position__in=selected_position)
 
             selected_sn = request.POST.getlist('selectSn',None)
-            if selected_sn:
+            selected_sn = list(set(selected_sn))
+            selected_sn.remove('')
+            if selected_sn :
                 selected = True
                 qs = qs.filter(sn__in=selected_sn)
 
             if qs.count() > 20 and selected:
-                self.list_per_page = 1000
+                self.list_per_page = qs.count()
         else:
             if self.saved_dropdown_dict:
                 for filter in self.saved_dropdown_dict.values():
@@ -507,13 +527,59 @@ class UutAdmin(admin.ModelAdmin):
         custom_urls = [
             path('edit/', self.admin_site.admin_view(self.edit_uut)),
         ]
+        # print(urls)
         return custom_urls+urls
+
+    def borrow_uut(self,request):
+        uuts = request.GET.getlist('id')
+        context = {
+            'uuts':uuts,
+        }
+        return TemplateResponse(request,'admin/borrow_uut_template.html',context=context)
+    
 
     
 
-    def edit_uut(self,request):
+    class edit_uut_form(forms.ModelForm):
+        # borrower = forms.ModelChoiceField(queryset=Member.objects.all().order_by('usernameincompany'),required=False)
+        status = forms.ModelChoiceField(queryset=UutStatus.objects.all().order_by('status_text'),required=False)
+        class Meta:
+            model = Uut
+            fields=['platform','phase','sku','status','scrap','position','cpu','remark']
+            # widgets={
+            #     'platform':forms.Select(attrs={'class':'form-control'}),
+            #     'phase':forms.Select(attrs={'class':'form-control'}),
+            #     'sku':forms.TextInput(attrs={'class':'form-control'})
+            # }
         
-        return TemplateResponse(request,'admin/uut_base_site.html')
+
+    def edit_uut(self,request):
+        uuts = request.GET.getlist('id')
+        form = self.edit_uut_form()
+        if uuts:
+            uuts = Uut.objects.filter(id__in = uuts)
+
+        if request.method == 'POST':
+            platform = request.POST.get('platform',None)
+            phase = request.POST.get('phase',None)
+            sku = request.POST.get('sku',None)
+            # borrower = request.POST.get('borrower')
+            status = request.POST.get('status',None)
+            position = request.POST.get('position',None)
+            cpu = request.POST.get('cpu',None)
+            remark = request.POST.get('remark',None)
+            
+            if platform: uuts.update(platform = platform)
+            if phase: uuts.update(phase = phase)
+            if sku: uuts.update(sku = sku)
+            if status: uuts.update(status = status)
+            if position: uuts.update(position = position)
+            if cpu: uuts.update(cpu = cpu)
+            if remark: uuts.update(remark = remark)
+
+        return TemplateResponse(request,'admin/edit_uut_template.html',context={'uuts':uuts,'form':form})
+
+
 
 
 

@@ -1,110 +1,178 @@
-{% extends 'admin/change_form.html' %}
+{% extends 'admin\base_site.html' %}
+{% block title %}
+IUR | Edit UUTs
+{% endblock  %}
 
-{% block field_sets %}
-    {% for fieldset in adminform %}
-        <fieldset class="module aligned {{ fieldset.classes }}">
-            {% for line in fieldset %}
-                <div class="form-row{% if line.fields|length_is:'1' and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
-                    {% if line.fields|length_is:'1' %}{{ line.errors }}{% endif %}
-                    {% for field in line %}
-                        <div{% if not line.fields|length_is:'1' %} class="fieldBox{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if not field.is_readonly and field.errors %} errors{% endif %}{% if field.field.is_hidden %} hidden{% endif %}"{% elif field.is_checkbox %} class="checkbox-row"{% endif %}>
-                            {% if not line.fields|length_is:'1' and not field.is_readonly %}{{ field.errors }}{% endif %}
-                            {% if field.is_checkbox %}
-                                {{ field.field }}
-                            {% else %}
-                                {{ field.label_tag}}
-                                {% if field.is_readonly %}
-                                    <div class="readonly">{{ field.contents }}</div>
-                                {% else %}
-                                    {{ field.field }}
-                                {% endif %}
-                            {% endif %}
-                            {% if field.field.help_text %}
-                                <div class="help">{{ field.field.help_text|safe }}</div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </fieldset>
-        
-        <fieldset class="module">
-            <h2>UUTS</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th class="column-sn">SN</th>
-                        <th class="column-sku">SKU</th>
-                        <th class="column-position">POSITION</th>
-                        <th class="column-delete">DELETE</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="form-row has_original" id="root-input">
-                        <td class="field-sn">
-                            <input type="text" name="sn" class="vTextField" maxlength="10" id="sn-0">
-                        </td>
-                        <td>
-                            <input type="text" name="sku" class="vTextField">
-                        </td>
-                        <td>
-                            <input type="text" name="position" class="vTextField">
-                        </td>
-                        <td>
-                            <a href="javascript:void(0);" id='a-0' onclick="removeUutInfo(this)"><img src="/static/admin/img/icon-deletelink.svg" alt="Delete"></a>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </fieldset>
+{% block branding %}
+<h1 id="site-name"><a href="#">Lab Admin</a></h1>
+{% endblock  %}
 
-    {% endfor %}
-    <script>
-        document.getElementById('sn-0').onkeydown = function(){
-            if(this.value.length == this.attributes['maxlength'].value){
-                var rootInput = this.parentNode.parentNode;
-                var rootInputCopy = rootInput.cloneNode(true);
-                rootInputCopy.setAttribute['id'] = null;
-                var snInput = rootInputCopy.firstElementChild.firstElementChild;
-                snInput.setAttribute['id'] = '';
-                snInput.value='';
-                snInput.onkeydown = this.onkeydown;
-                this.onkeydown='';
-                rootInput.parentNode.insertBefore(rootInputCopy,rootInput.nextSibling);
-                snInput.focus();
-            }
-        };
-        function removeUutInfo(obj){
-            var snInput = obj.parentElement.parentElement.firstElementChild.firstElementChild;
-            var snInputPreviousSibling = snInput.parentNode.parentNode.previousSibling.firstElementChild.firstElementChild;
-            if(snInput.onkeydown != null){
-                snInputPreviousSibling.onkeydown = snInput.onkeydown;
-            }
-            var deleteLinkPreviousSibling = snInputPreviousSibling.parentElement.parentElement.lastElementChild.firstElementChild;
-            if(snInputPreviousSibling == null){
-                deleteLinkPreviousSibling.remove();
-            }
-            obj.parentNode.parentNode.remove();
-            
-        }
-        
-        
-        document.onreadystatechange = () => {
-            if (document.readyState === 'complete') {
-                window.onkeydown = (function(event){
-                    if(event.keyCode == 13){
-                        event.preventDefault();
-                        return false;
-                    }
-                });
-            }
-        };
-    </script>
-{% endblock field_sets %}
+{% block extrastyle %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
 
-{% block submit_buttons_bottom %}
-<div class="submit-row">
-    <input type="submit" value="SAVE" class="default" name="uut-save">    
+<!-- jQuery and JS bundle w/ Popper.js -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+{% endblock  %}
+
+{% block nav-global %}Edit UUts{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo;
+  <a href="{% url 'admin:iur_uut_changelist' %}">Iur</a>
+  &rsaquo;
+  <a href="#">Edit UUTs</a>
+  &rsaquo;
 </div>
-{% endblock submit_buttons_bottom%}
+{% endblock %}
 
+{% block content %}
+
+
+
+
+<div id="content-main">
+
+<form method="post">
+{% for field in form %}
+    <div class="fieldWrapper">
+        <div class="form-group">
+        {{ field.errors }}
+        {{ field.label_tag }} <br>
+        {{ field }}
+        {% if field.help_text %}
+        <p class="help">{{ field.help_text|safe }}
+        </p>
+        {% endif %}
+        </div>
+    </div>
+{% endfor %}
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+   <hr>
+
+  <table class="table" id="edit-table">
+<thead>
+<tr>
+<th scope="col" class="sortable column-platform_with_link">
+
+   <div class="text"><a href="?o=2">ID</a></div>
+
+</th>
+<th scope="col" class="sortable column-platform_with_link">
+
+   <div class="text"><a href="?o=2">PLATFORM</a></div>
+
+</th>
+<th scope="col" class="sortable column-platform_group_display">
+
+   <div class="text"><a href="?o=3">GROUP</a></div>
+   
+</th>
+<th scope="col" class="sortable column-platform_target_display">
+   
+     
+   
+   <div class="text"><a href="?o=4">TARGET</a></div>
+   
+</th>
+<th scope="col" class="sortable column-platform_cycle_display">
+   
+     
+   
+   <div class="text"><a href="?o=5">CYCLE</a></div>
+   
+</th>
+<th scope="col" class="sortable column-phase">
+   
+     
+   
+   <div class="text"><a href="?o=6">Phase</a></div>
+   
+</th>
+<th scope="col" class="sortable column-sku">
+   
+     
+   
+   <div class="text"><a href="?o=7">Sku</a></div>
+   
+</th>
+<th scope="col" class="sortable column-sn">
+   
+     
+   
+   <div class="text"><a href="?o=8">Sn</a></div>
+   
+</th>
+<th scope="col" class="column-borrower_display">
+   
+   <div class="text"><span>BORROWER</span></div>
+   
+</th>
+<th scope="col" class="sortable column-status">
+   
+     
+   
+   <div class="text"><a href="?o=10">Status</a></div>
+   
+</th>
+<th scope="col" class="sortable column-scrap">
+   
+     
+   
+   <div class="text"><a href="?o=11">Scrap</a></div>
+   
+</th>
+<th scope="col" class="sortable column-position">
+   
+     
+   
+   <div class="text"><a href="?o=12">Position</a></div>
+   
+</th>
+<th scope="col" class="sortable column-cpu">
+   
+     
+   
+   <div class="text"><a href="?o=13">Cpu</a></div>
+   
+</th>
+<th scope="col" class="sortable column-remark">
+   
+     
+   
+   <div class="text"><a href="?o=14">Remark</a></div>
+   
+</th>
+<th scope="col" class="sortable column-keyin_time">
+   <div class="text"><a href="?o=15">Keyin time</a></div>
+</th>
+</tr>
+</thead>
+    <tbody>
+      {% for uut in uuts %}
+      <tr>
+        <td scope="row">{{ uut.id }}</td>
+        <td>{{ uut.platform }}</td>
+        <td>{{ uut.platform.group }}</td>
+        <td>{{ uut.platform.target }}</td>
+        <td>{{ uut.platform.cycle }}</td>
+        <td>{{ uut.phase }}</td>
+        <td>{{ uut.sku }}</td>
+        <td>{{ uut.sn }}</td>
+        <td>{{ uut.borrower }}</td>
+        <td>{{ uut.status }}</td>
+        <td>{{ uut.scrap }}</td>
+        <td>{{ uut.position }}</td>
+        <td>{{ uut.cpu }}</td>
+        <td>{{ uut.remark }}</td>
+        <td>{{ uut.keyin_time }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock  %}

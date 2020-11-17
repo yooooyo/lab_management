@@ -283,7 +283,7 @@ class Uut(models.Model):
 
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
-    member = models.ForeignKey(Member,on_delete=models.CASCADE,)
+    member = models.ForeignKey(Member,on_delete=models.CASCADE,null=True)
     # rent_time = models.DateTimeField(auto_now=True)
     rent_time = models.DateTimeField(blank=True, null=True)
     back_time = models.DateTimeField(blank=True, null=True)
@@ -293,7 +293,7 @@ class UutBorrowHistory(models.Model):
     class Meta:
         managed = True
         db_table = 'uut_borrow_history'
-        ordering=['rent_time',]
+        ordering=['-rent_time',]
 
     def __str__(self):
         return f"{self.id} {self.uut} {self.member} '{self.rent_time}' '{self.back_time}''"
