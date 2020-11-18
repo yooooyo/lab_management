@@ -1,5 +1,6 @@
 from django.contrib import admin,messages
 from django.contrib.auth.models import Group,User
+from django.http import request
 from django.utils.html import format_html
 from django.utils.translation import ngettext
 from django.http import HttpResponse,HttpResponseRedirect
@@ -70,11 +71,13 @@ class PlatformAdmin(admin.ModelAdmin):
 
 @admin.register(UutBorrowHistory)
 class UutBorrowHistoryAdmin(admin.ModelAdmin):
-    list_display = ('uut','member','rent_time','back_time')
+    list_display = ('id','uut','member','purpose','rent_time','back_time')
     fields = ('uut','member','back_time','purpose')
     search_fields=('member__usernameincompany','uut__sn',)
     raw_id_fields = ('uut','member')
     autocomplete_fields=('uut','member')
+    list_filter = ('rent_time','back_time')
+    date_hierarchy ='rent_time'
     pass
 
 @admin.register(Uut)
@@ -200,40 +203,44 @@ class UutAdmin(admin.ModelAdmin):
 
 
     # actions
-    actions = ['mark_scrap','mark_unscrap','rent_back','edit_uuts','borrow_and_transfer']
+
+    actions = ['mark_scrap','mark_unscrap','rent_back','edit_uuts_action','borrow_and_transfer_action']
+
+
 
     def mark_scrap(self,request,queryset):
-        be_updated = queryset.update(scrap = True)
-        self.message_user(request,ngettext(f'{be_updated} item was mark scrap',f'{be_updated} items were mark scrap',be_updated),messages.SUCCESS)
-        
+        if request.user.is_superuser:
+            be_updated = queryset.update(scrap = True)
+            self.message_user(request,ngettext(f'{be_updated} item was mark scrap',f'{be_updated} items were mark scrap',be_updated),messages.SUCCESS)
     mark_scrap.short_description = 'Scrap'
 
     def mark_unscrap(self,request,queryset):
-        be_updated = queryset.update(scrap = False)
-        self.message_user(request,ngettext(f'{be_updated} item was mark unscrap',f'{be_updated} items were mark unscrap',be_updated),messages.SUCCESS)
+        if request.user.is_superuser:
+            be_updated = queryset.update(scrap = False)
+            self.message_user(request,ngettext(f'{be_updated} item was mark unscrap',f'{be_updated} items were mark unscrap',be_updated),messages.SUCCESS)
     mark_unscrap.short_description = 'UnScrap'
 
     def rent_back(self,request,queryset):
-        filter_not_borrowed = queryset.filter(uutborrowhistory__isnull=False)
-        for uut in filter_not_borrowed:
-            last_borrow = uut.uutborrowhistory_set.last()
-            from datetime import datetime
-            last_borrow.back_time = datetime.now()
-            uut.status = Uut.status_default
-            uut.save()
-            last_borrow.save()
+        if request.user.is_superuser:
+            self.rent_back_uuts(queryset)
     rent_back.short_description = 'Rent Back'
 
-    def edit_uuts(self,request,queryset):
+    def edit_uuts_action(self,request,queryset):
         # self.list_editable = ()
-        if queryset:
-            ids = '&'.join([ f'id={q.id}' for q in queryset])
-            return HttpResponseRedirect(f'edit/?{ids}')
-    edit_uuts.short_description = 'Edit UUTs'
+        if request.user.is_superuser:
+            if queryset:
+                ids = '&'.join([ f'id={q.id}' for q in queryset])
+                return HttpResponseRedirect(f'edit/?{ids}')
+    edit_uuts_action.short_description = 'Edit UUTs'
 
-    def borrow_and_transfer(self,request,queryset):
-        pass
-    borrow_and_transfer.short_description = 'Borrow and Transfer'
+    def borrow_and_transfer_action(self,request,queryset):
+        # self.list_editable = ()
+        if request.user.is_superuser:
+            if queryset:
+                ids = '&'.join([ f'id={q.id}' for q in queryset])
+                return HttpResponseRedirect(f'borrow/?{ids}')
+    borrow_and_transfer_action.short_description = 'Borrow UUTs'
+
     # custom view
 
     add_form_template = 'admin/add_uut_template.html'
@@ -347,6 +354,8 @@ class UutAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         
+        if not request.user.is_superuser:
+            self.actions = []
         qs = self.get_queryset(request)
         
 
@@ -525,19 +534,70 @@ class UutAdmin(admin.ModelAdmin):
         from django.urls import path
         urls = super().get_urls()
         custom_urls = [
-            path('edit/', self.admin_site.admin_view(self.edit_uut)),
+            path('edit/', self.admin_site.admin_view(self.edit_uuts)),
+            path('borrow/', self.admin_site.admin_view(self.borrow_uuts)),
         ]
+        custom_urls+=urls
         # print(urls)
-        return custom_urls+urls
+        return custom_urls
 
-    def borrow_uut(self,request):
-        uuts = request.GET.getlist('id')
-        context = {
-            'uuts':uuts,
-        }
-        return TemplateResponse(request,'admin/borrow_uut_template.html',context=context)
+    class borrow_transfer_form(forms.ModelForm):
+
+        class Meta:
+            model = UutBorrowHistory
+            fields=['member','purpose']
+
+    def borrow_uuts(self,request):
+        if request.user.is_superuser:
+            uuts = request.GET.getlist('id')
+            form = self.borrow_transfer_form()
+            if uuts:
+                uuts = Uut.objects.filter(id__in = uuts)
+
+            if request.method=='POST':
+                borrowRentRadios = request.POST.get('borrowRentRadios')
+                if borrowRentRadios == 'back':
+                    self.rent_back_uuts(uuts)
+                elif borrowRentRadios == 'borrow':
+                    member = request.POST.get('member',None)
+                    purpose = request.POST.get('purpose','')
+                    self.borrow_or_transfer(member,uuts,purpose)
+                
+            context = {
+                'form':form,
+                'uuts':uuts,
+            }
+            return TemplateResponse(request,'admin/borrow_uut_template.html',context=context)
     
+    def borrow_or_transfer(self,member,uuts,purpose):
+        
+        member = Member.objects.get(pk=member)
+        for uut in uuts:
+            last_record = uut.uutborrowhistory_set.last()
+            if last_record and last_record.member != member:
+                self.rent_back_uut(uut)
+            if not last_record or last_record.back_time:
+                new_record = uut.uutborrowhistory_set.create(
+                    member = member,
+                    purpose = purpose
+                )
+                new_record.save()
+                uut.status = UutStatus.objects.get(status_text__icontains='rent')
+                uut.save()
 
+    def rent_back_uuts(self,uuts):
+        filter_not_borrowed = uuts.filter(uutborrowhistory__isnull=False).filter(uutborrowhistory__back_time__isnull=True)
+        for uut in filter_not_borrowed:
+            self.rent_back_uut(uut)
+
+    def rent_back_uut(self,uut):
+            last_record = uut.uutborrowhistory_set.last()
+            if not last_record.back_time:
+                from datetime import datetime
+                last_record.back_time = datetime.now()
+                uut.status = Uut.status_default
+                uut.save()
+                last_record.save()
     
 
     class edit_uut_form(forms.ModelForm):
@@ -553,31 +613,35 @@ class UutAdmin(admin.ModelAdmin):
             # }
         
 
-    def edit_uut(self,request):
-        uuts = request.GET.getlist('id')
-        form = self.edit_uut_form()
-        if uuts:
-            uuts = Uut.objects.filter(id__in = uuts)
+    def edit_uuts(self,request):
+        if request.user.is_superuser:
+            uuts = request.GET.getlist('id')
+            form = self.edit_uut_form()
+            if uuts:
+                uuts = Uut.objects.filter(id__in = uuts)
 
-        if request.method == 'POST':
-            platform = request.POST.get('platform',None)
-            phase = request.POST.get('phase',None)
-            sku = request.POST.get('sku',None)
-            # borrower = request.POST.get('borrower')
-            status = request.POST.get('status',None)
-            position = request.POST.get('position',None)
-            cpu = request.POST.get('cpu',None)
-            remark = request.POST.get('remark',None)
-            
-            if platform: uuts.update(platform = platform)
-            if phase: uuts.update(phase = phase)
-            if sku: uuts.update(sku = sku)
-            if status: uuts.update(status = status)
-            if position: uuts.update(position = position)
-            if cpu: uuts.update(cpu = cpu)
-            if remark: uuts.update(remark = remark)
+            if request.method == 'POST':
+                platform = request.POST.get('platform',None)
+                phase = request.POST.get('phase',None)
+                sku = request.POST.get('sku',None)
+                # borrower = request.POST.get('borrower')
+                status = request.POST.get('status',None)
+                scrap = request.POST.get('scrap',False)
+                position = request.POST.get('position',None)
+                cpu = request.POST.get('cpu',None)
+                remark = request.POST.get('remark',None)
+                
+                if platform: uuts.update(platform = platform)
+                if scrap: uuts.update(scrap = True)
+                else: uuts.update(scrap = scrap)
+                if phase: uuts.update(phase = phase)
+                if sku: uuts.update(sku = sku)
+                if status: uuts.update(status = status)
+                if position: uuts.update(position = position)
+                if cpu: uuts.update(cpu = cpu)
+                if remark: uuts.update(remark = remark)
 
-        return TemplateResponse(request,'admin/edit_uut_template.html',context={'uuts':uuts,'form':form})
+            return TemplateResponse(request,'admin/edit_uut_template.html',context={'uuts':uuts,'form':form})
 
 
 
