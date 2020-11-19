@@ -25,7 +25,7 @@ SECRET_KEY = 'jlc#ci_qszthz-3$5cn=z1ddf=nsi)#0pl3+jxb6@g=b08^v9d'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # REST_FRAMEWORK
 REST_FRAMEWORK = {
@@ -149,3 +149,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# # Email Settings
+# # http://cheng.logdown.com/posts/2016/06/23/django-how-to-send-email-via-smtp
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_USE_TLS = True
+# EMAIL_HOST = 'smtp.office365.com' # double check the settings in your outlook mailbox to make sure the host name is correct
+
+# EMAIL_PORT = 587  # double check the settings in your outlook mailbox and make sure the port number is correct
+
+# EMAIL_HOST_USER = 'david.tsai@hp.com'  # don't include the @blah.com part! I have made this stupid mistakes before
+
+# EMAIL_HOST_PASSWORD = '8ik,(OL>0p;/'

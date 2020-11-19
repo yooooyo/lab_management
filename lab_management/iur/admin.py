@@ -350,7 +350,7 @@ class UutAdmin(admin.ModelAdmin):
         position = Dropdown('Position',position)
         self.saved_dropdown_dict.update({'position':position})
         
-        return [platform,borrower,phase,group,sku,status,scrap,position]
+        return [platform,borrower,phase,group,target,cycle,sku,status,scrap,position]
 
     def changelist_view(self, request, extra_context=None):
         
@@ -573,14 +573,14 @@ class UutAdmin(admin.ModelAdmin):
         
         member = Member.objects.get(pk=member)
         for uut in uuts:
-            last_record = uut.uutborrowhistory_set.last()
+            last_record = uut.uutborrowhistory_set.filter(back_time__isnull=True).last()
             if last_record and last_record.member != member:
-                self.rent_back_uut(uut)
+                last_record = self.rent_back_uut(uut,last_record)
             if not last_record or last_record.back_time:
                 new_record = uut.uutborrowhistory_set.create(
                     member = member,
                     purpose = purpose
-                )
+                )   
                 new_record.save()
                 uut.status = UutStatus.objects.get(status_text__icontains='rent')
                 uut.save()
@@ -590,14 +590,17 @@ class UutAdmin(admin.ModelAdmin):
         for uut in filter_not_borrowed:
             self.rent_back_uut(uut)
 
-    def rent_back_uut(self,uut):
+    def rent_back_uut(self,uut,record = None):
             last_record = uut.uutborrowhistory_set.last()
+            if record :
+                last_record = record
             if not last_record.back_time:
                 from datetime import datetime
                 last_record.back_time = datetime.now()
                 uut.status = Uut.status_default
                 uut.save()
                 last_record.save()
+                return last_record
     
 
     class edit_uut_form(forms.ModelForm):
