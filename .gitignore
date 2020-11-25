@@ -2,4 +2,8 @@
 .vscode
 __pycache__
 migrrations
+media
 lab_management/iur/migrations/*
+o365_token*
+lab_management_azure_active_directory_token.txt
+credentials.json

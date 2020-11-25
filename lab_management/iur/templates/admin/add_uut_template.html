@@ -1,8 +1,22 @@
 {% extends 'admin/change_form.html' %}
-
+{% block extrahead %}
+{{ block.super }}
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+{% endblock extrahead %}
 {% block field_sets %}
     {% for fieldset in adminform %}
         <fieldset class="module aligned {{ fieldset.classes }}">
+            {% comment %} {% for field in form %}
+                <div class="fieldWrapper">
+                    {{ field.errors }}
+                    {{ field.label_tag }} <br>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <p class="help">{{ field.help_text|safe }}
+                    </p>
+                    {% endif %}
+                </div>
+            {% endfor %} {% endcomment %}
             {% for line in fieldset %}
                 <div class="form-row{% if line.fields|length_is:'1' and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
                     {% if line.fields|length_is:'1' %}{{ line.errors }}{% endif %}
@@ -39,10 +53,10 @@
                         <th class="column-delete">DELETE</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="form-table-body">
                     <tr class="form-row has_original" id="root-input">
                         <td class="field-sn">
-                            <input type="text" name="sn" class="vTextField" maxlength="10" id="sn-0">
+                            <input type="text" name="sn"  class="uut-multi-searcher-input"  placeholder="Serial Number">
                         </td>
                         <td>
                             <input type="text" name="sku" class="vTextField">
@@ -51,59 +65,52 @@
                             <input type="text" name="position" class="vTextField">
                         </td>
                         <td>
-                            <a href="javascript:void(0);" id='a-0' onclick="removeUutInfo(this)"><img src="/static/admin/img/icon-deletelink.svg" alt="Delete"></a>
+                            <a href="javascript:void(0);" class="uut-multi-searcher-delete"><img src="/static/admin/img/icon-deletelink.svg" alt="Delete"></a>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </fieldset>
-
     {% endfor %}
     <script>
-        document.getElementById('sn-0').onkeydown = function(){
-            if(this.value.length == this.attributes['maxlength'].value){
-                var rootInput = this.parentNode.parentNode;
-                var rootInputCopy = rootInput.cloneNode(true);
-                rootInputCopy.setAttribute['id'] = null;
-                var snInput = rootInputCopy.firstElementChild.firstElementChild;
-                snInput.setAttribute['id'] = '';
-                snInput.value='';
-                snInput.onkeydown = this.onkeydown;
-                this.onkeydown='';
-                rootInput.parentNode.insertBefore(rootInputCopy,rootInput.nextSibling);
-                snInput.focus();
+
+        $(".uut-multi-searcher-delete").click(function(){
+            if($(".uut-multi-searcher-delete").length>1){
+                $(this).parent('td').parent(".form-row.has_original").remove();
             }
-        };
-        function removeUutInfo(obj){
-            var snInput = obj.parentElement.parentElement.firstElementChild.firstElementChild;
-            var snInputPreviousSibling = snInput.parentNode.parentNode.previousSibling.firstElementChild.firstElementChild;
-            if(snInput.onkeydown != null){
-                snInputPreviousSibling.onkeydown = snInput.onkeydown;
+        });
+
+        $(".form-row.has_original").last().on("keydown","input[type='text']",function(e){
+            if(e.which==13){
+                let cloneCell = $(".form-row.has_original").last().clone(true)
+                let cloneCellInput = cloneCell.find(".uut-multi-searcher-input");
+                cloneCellInput.val("");
+                cloneCell.appendTo(".form-table-body");
+                cloneCellInput.focus();
+                e.preventDefault();
+                return false;
             }
-            var deleteLinkPreviousSibling = snInputPreviousSibling.parentElement.parentElement.lastElementChild.firstElementChild;
-            if(snInputPreviousSibling == null){
-                deleteLinkPreviousSibling.remove();
-            }
-            obj.parentNode.parentNode.remove();
-            
-        }
-        
-        
-        document.onreadystatechange = () => {
-            if (document.readyState === 'complete') {
-                window.onkeydown = (function(event){
-                    if(event.keyCode == 13){
-                        event.preventDefault();
-                        return false;
-                    }
-                });
-            }
-        };
+        });
+
+
     </script>
 {% endblock field_sets %}
 {% block submit_buttons_bottom %}
 <div class="submit-row">
-    <input type="submit" value="SAVE" class="default" name="uut-save">    
+    <input type="submit" value="SAVE" class="default" id="uut-save" name="uut-save">    
 </div>
+<script>
+    $(document).on('click', '.allow-focus', function (e) {
+        e.stopPropagation();
+    });
+
+    $('#uut-save').keydown(function (e) {
+        console.log(e.keyCode)
+        if (e.keyCode == 13) {
+            e.preventDefault();
+            return false;
+        }
+    });
+</script>
 {% endblock submit_buttons_bottom%}
 

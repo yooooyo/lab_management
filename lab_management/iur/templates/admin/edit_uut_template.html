@@ -156,11 +156,11 @@ IUR | Edit UUTs
       {% for uut in uuts %}
       <tr>
         <td scope="row">{{ uut.id }}</td>
-        <td>{{ uut.platform }}</td>
-        <td>{{ uut.platform.group }}</td>
-        <td>{{ uut.platform.target }}</td>
-        <td>{{ uut.platform.cycle }}</td>
-        <td>{{ uut.phase }}</td>
+        <td>{{ uut.platform_phase.platform.codename }}</td>
+        <td>{{ uut.platform_phase.platform.group }}</td>
+        <td>{{ uut.platform_phase.platform.target }}</td>
+        <td>{{ uut.platform_phase.platform.cycle }}</td>
+        <td>{{ uut.platform_phase.phase }}</td>
         <td>{{ uut.sku }}</td>
         <td>{{ uut.sn }}</td>
         <td>{{ uut.borrower }}</td>
