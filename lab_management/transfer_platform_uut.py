@@ -88,7 +88,6 @@ for uut in ut.objects.using('old').all():
                 if not 'Storage' in uut.borrower:
                     borrower = mb.objects.get(usernameincompany__search=uut.borrower)
                     ubh.objects.create(member=borrower,rent_time=uut.borrowingdate1,uut = unit,)
-
             
             print('PASS')
 

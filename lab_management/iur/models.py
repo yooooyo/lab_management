@@ -396,6 +396,9 @@ class UutBorrowHistory(models.Model):
         db_table = 'uut_borrow_history'
 
 
+    def uut_phase(self):
+        return self.platform_phase.phase.phase_text
+    uut_phase.short_description = 'phase'
 
 
 
