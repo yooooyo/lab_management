@@ -402,6 +402,8 @@ class UutBorrowHistory(models.Model):
 
 
 
+
+
 class Task(models.Model):
     id = models.BigAutoField(primary_key=True)
     status = models.CharField(max_length=50)

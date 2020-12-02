@@ -32,6 +32,15 @@ Hi All,
 
 {% endif %}
 <br>
+{% if att_files %}
+Following attachments, please download if you need:
+<br>
+  {% for file_name,file_url in att_files %}
+      <a href="{{file_url}}">{{file_name}}</a>
+  {% endfor %}
+{% endif %}
+<br>
+<br>
 <table class="tg">
 <thead>
   <tr>
