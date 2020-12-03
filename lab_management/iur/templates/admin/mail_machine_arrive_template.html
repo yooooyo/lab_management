@@ -1,0 +1,88 @@
+<html>
+<head>
+  <style type="text/css">
+  .tg  {border-collapse:collapse;border-color:#ccc;border-spacing:0;}
+  .tg td{background-color:#fff;border-color:#ccc;border-style:solid;border-width:1px;color:#333;
+    font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:3px 20px;word-break:normal;}
+  .tg th{background-color:#f0f0f0;border-color:#ccc;border-style:solid;border-width:1px;color:#333;
+    font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:3px 20px;word-break:normal;}
+  .tg .tg-p0uq{background-color:#ffffff;font-weight:bold;position:-webkit-sticky;position:sticky;text-align:center;top:-1px;
+    vertical-align:top;will-change:transform}
+  .tg .tg-9upd{background-color:#ffffff;border-color:inherit;font-weight:bold;position:-webkit-sticky;position:sticky;
+    text-align:center;top:-1px;vertical-align:top;will-change:transform}
+  .tg .tg-6sgx{background-color:#ffffff;text-align:left;vertical-align:top}
+  .tg .tg-gaf0{background-color:#ecf4ff;}
+  </style>
+</head>
+<body>
+
+Hi All,
+<br>
+<p>The machines have arrived, please pick up if you need.</p>
+{% if att_files %}
+<p>Following attachments, please download if you need:</p>
+  {% for file_name,file_url in att_files %}
+      <a href="{{file_url}}">{{file_name}}</a>
+  {% endfor %}
+<br>
+{% endif %}
+{% if message %}
+
+<p>{{ message }}</p>
+
+{% endif %}
+<br>
+{% if att_files %}
+Following attachments, please download if you need:
+<br>
+  {% for file_name,file_url in att_files %}
+      <a href="{{file_url}}">{{file_name}}</a>
+  {% endfor %}
+{% endif %}
+<br>
+<br>
+<table class="tg">
+<thead>
+  <tr>
+    <th class="tg-9upd">Platform</th>
+    <th class="tg-9upd">Phase</th>
+    <th class="tg-9upd">SKU</th>
+    <th class="tg-9upd">QTY</th>
+  </tr>
+</thead>
+<tbody>
+
+  {% if arrive_uuts %}
+  {% for arrive_type in arrive_uuts %}
+    <tr>
+      <td class="tg-gaf0" colspan="6">{{arrive_type.name}}</td>
+    </tr>
+    {% for uut in arrive_type.uuts %}
+    <tr>
+        <td>{{ uut.platform.codename }}</td>
+        <td>{{ uut.phase.phase_text }}</td>
+        <td>{{ uut.sku }}</td>
+        <td>{{ uut.qty }}</td>
+    </tr>
+    {% endfor %}
+  {% endfor %}
+  {% endif %}
+
+
+
+</tbody>
+</table>
+{% if config_urls %}
+  <br>
+  <p>If you want to check the platform config, please click this link as below:</p>
+    {% for url in config_urls %}
+      {% if url.platform_phase__config__config_url %}
+        <a href="{{ url.platform_phase__config__config_url }}">{{ url.platform_phase__config__config_name }}</a><br><br>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+<br>
+{{ sender }}
+
+</body>
+</html>

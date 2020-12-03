@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
+    'O365',
     'iur.apps.IurConfig',
     'rest_framework',
 
@@ -150,6 +151,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+MEDIA_URL = '/media/'
+import os
+MEDIA_ROOT = os.path.join(BASE_DIR,'media') 
 
 # # Email Settings
 # # http://cheng.logdown.com/posts/2016/06/23/django-how-to-send-email-via-smtp
