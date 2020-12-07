@@ -35,8 +35,9 @@ class UutStatusAdmin(admin.ModelAdmin):
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
+    list_display = ['id','usernameincompany','email']
     search_fields = ('usernameincompany',)
-    pass
+    
 
 @admin.register(UutPhase)
 class UutPhaseAdmin(admin.ModelAdmin):

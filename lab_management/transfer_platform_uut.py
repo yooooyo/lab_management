@@ -2,9 +2,9 @@ from os import name
 from oldiur.models import Unittable as ut
 from oldiur.models import IurMailList as iml
 
-# from django.contrib.auth.models import Group,User
+from django.contrib.auth.models import Group,User
 
-from iur.models import AuthUser as User
+# from iur.models import AuthUser as User
 from iur.models import Platform as pf
 from iur.models import Uut as u
 from iur.models import UutPhase as up
@@ -15,7 +15,8 @@ from iur.models import PlatformPhase as pp
 
 
 all_iml = iml.objects.using('old').all().order_by('mail')
-fail_iml=0
+fail_iml = []
+fail_iml_cnt=0
 
 def get_365_account():
 
@@ -33,25 +34,23 @@ def get_365_account():
 contacts = get_365_account().address_book()
 
 for m in all_iml:
-    print("---------------------------------")
-    print(f'{m.id} {m.name} {m.mail}')
+    # print("---------------------------------")
+    # print(f'{m.id} {m.name} {m.mail}')
     try:
+        if User.objects.filter(email=m.mail).count()>0: continue
         contact = contacts.get_contact_by_email(m.mail)
         user,user_created = User.objects.get_or_create(username=m.mail.strip(),email = m.mail.strip())
-        print(f'{user} - {user_created}')
         if user_created:
             if contact:
                 name = m.name if 'None' in contact.full_name else contact.full_name
             else :
                 name =  m.name
             mb_obj,mb_obj = mb.objects.get_or_create(usernameincompany =name,user = user)
-            print(f'{mb_obj} - {mb_obj}')
-        print('PASS')
+        # print('PASS')
     except Exception as e:
-        fail_iml = fail_iml + 1 
-
-        print(e)
-print(f"all/fail : {all_iml.count()}/{fail_iml}")
+        fail_iml_cnt = fail_iml_cnt + 1 
+        fail_iml.append({'m':m,'e':e})
+print(f"all/fail : {all_iml.count()}/{fail_iml_cnt}")
 
 
 category = {'DT':(pf.GROUP_CHOICE[0][0],pf.TARGET_CHOICE[1][0]),
@@ -63,12 +62,12 @@ category = {'DT':(pf.GROUP_CHOICE[0][0],pf.TARGET_CHOICE[1][0]),
              'CNB':(pf.GROUP_CHOICE[1][0],pf.TARGET_CHOICE[0][0])
             }
 all_uut = ut.objects.using('old').all()
-
+fail_uut = []
 fail_uut_cnt = 0
 fail_list = []
 for uut in ut.objects.using('old').all():
-    print("----------------")
-    print(uut)
+    # print("----------------")
+    # print(uut)
     try:
         if uut.platformname:
             group,target = category.get(uut.category,(None,None))
@@ -78,26 +77,27 @@ for uut in ut.objects.using('old').all():
 
             status,status_created = us.objects.get_or_create(status_text = uut.unitstatus.strip())
 
-            scrap = True if uut.unitstatus == 'Scrap' else False
+            scrap = True if uut.unitstatus.strip() in ['Scrap','Broken','Fix','broken'] else False
             position = uut.position if uut.position else ''
             
-            unit,unit_created = u.objects.get_or_create(platform_phase = platform_phase,scrap = scrap,position=position,sn = uut.sn,sku=uut.sku,keyin_time=uut.keyintime,cpu=uut.cpu,remark=uut.noteone,status=status)
+            unit,unit_created = u.objects.update_or_create(platform_phase = platform_phase,scrap = scrap,position=position,sn = uut.sn,sku=uut.sku,keyin_time=uut.keyintime,cpu=uut.cpu,remark=uut.noteone,status=status)
             
             
             if uut.borrower:
-                if not 'Storage' in uut.borrower:
+                if uut.borrower.strip() not in ['Storage','storage','Detained by Emma','Donated TDC Pool','Donated for YEP','LAB','PDM','Return 8F','Srotage']:
                     borrower = mb.objects.get(usernameincompany__search=uut.borrower)
-                    ubh.objects.create(member=borrower,rent_time=uut.borrowingdate1,uut = unit,)
+                    unit.uutborrowhistory_set.create(member=borrower,rent_time=uut.borrowingdate1)
 
             
-            print('PASS')
+            # print('PASS')
 
 
     except Exception as e:
         fail_uut_cnt+=1
-        print(e)
-        fail_list.append(e)
-        print('FAIL')
+        fail_uut.append({'uut':uut,'e':e})
 
 print(f"all/fail : {all_uut.count()}/{fail_uut_cnt}")
-print(set(fail_list))
+
+# for uut in fail_uut:
+#     unit = u.objects.get(sn=uut.sn) 
+#     unit.uutborrowhistory_set.create()
