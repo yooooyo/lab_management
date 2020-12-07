@@ -46,7 +46,7 @@ class UutStatus(models.Model):
         return obj
 
     @classmethod
-    def Return8F(self):
+    def RETURN8F(self):
         obj,created = self.objects.get_or_create(status_text='Return 8F')
         return obj
 
@@ -80,7 +80,7 @@ class Ap(models.Model):
     is_active = models.BooleanField(default=False)
     is_scrap = models.BooleanField(default=False)
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ap'
 
 
@@ -92,7 +92,7 @@ class ApBorrowHistory(models.Model):
     back_time = models.TimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ap_borrow_history'
 
 
@@ -360,6 +360,7 @@ class Uut(models.Model):
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     scrap = models.BooleanField(default=False)
+    # keyin_time = models.DateTimeField(auto_now_add=True)
     keyin_time = models.DateTimeField(blank=True, null=True)
     platform_phase = models.ForeignKey(PlatformPhase, models.DO_NOTHING, blank=True, null=True)
 
@@ -405,7 +406,8 @@ class Uut(models.Model):
 
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
-    rent_time = models.DateTimeField(auto_now_add=True)
+    # rent_time = models.DateTimeField(auto_now_add=True)
+    rent_time = models.DateTimeField(null=True)
     back_time = models.DateTimeField(blank=True, null=True)
     purpose = models.TextField(blank=True, null=True)
     member = models.ForeignKey(Member, models.DO_NOTHING, blank=True, null=True)

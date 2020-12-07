@@ -75,6 +75,8 @@ for uut in ut.objects.using('old').all():
             phase,phase_created = up.objects.get_or_create(phase_text = uut.phase.strip())
             platform_phase,platform_phase_created = pp.objects.get_or_create(platform=platform,phase = phase)
 
+            status = uut.unitstatus.strip().lower()
+            status = 'Keep On' if status in ['Keep on','keep on'] else status
             status,status_created = us.objects.get_or_create(status_text = uut.unitstatus.strip())
 
             scrap = True if uut.unitstatus.strip() in ['Scrap','Broken','Fix','broken'] else False

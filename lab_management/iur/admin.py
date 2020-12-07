@@ -212,7 +212,7 @@ class UutAdmin(admin.ModelAdmin):
 
     def return_8F(self,request,queryset):
         if request.user.is_superuser:
-            pass
+            queryset.update(status = UutStatus.RETURN8F())
     return_8F.short_description = 'Return 8F'
 
     def edit_uuts_action(self,request,queryset):
@@ -807,7 +807,7 @@ class UutAdmin(admin.ModelAdmin):
         if not last_record.back_time:
             from datetime import datetime
             last_record.back_time = datetime.now()
-            uut.status = Uut.status_default
+            uut.status = UutStatus.KEEPON()
             uut.save()
             last_record.save()
             return last_record
