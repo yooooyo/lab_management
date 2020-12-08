@@ -857,11 +857,11 @@ class UutAdmin(admin.ModelAdmin):
                         pp,ppCreated = PlatformPhase.objects.get_or_create(platform = uut.platform_phase.platform,phase = p)
                         uut.platform_phase = pp
                     uut.scrap = True if scrap else uut.scrap
-                    if sku: uut.update(sku = sku)
-                    if status: uut.update(status = status)
-                    if position: uut.update(position = position)
-                    if cpu: uut.update(cpu = cpu)
-                    if remark: uut.update(remark = remark)
+                    uut.sku = sku if sku else uut.sku
+                    uut.status = status if status else uut.status
+                    uut.position = position if position else uut.position
+                    uut.cpu = cpu if cpu else uut.cpu
+                    uut.remark = remark if remark else uut.remark
                     uut.save()
 
             return TemplateResponse(request,'admin/edit_uut_template.html',context={'uuts':uuts,'form':form})

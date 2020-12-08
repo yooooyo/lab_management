@@ -16,31 +16,19 @@
 </head>
 <body>
 
-Hi All,
-<br>
+Hi all:
 <p>The machines have arrived, please pick up if you need.</p>
+{% if message %}
+<p>{{ message }}</p>
+<br>
+{% endif %}
 {% if att_files %}
 <p>Following attachments, please download if you need:</p>
   {% for file_name,file_url in att_files %}
-      <a href="{{file_url}}">{{file_name}}</a>
+      <a href="{{file_url}}">{{file_name}}</a><br>
   {% endfor %}
 <br>
 {% endif %}
-{% if message %}
-
-<p>{{ message }}</p>
-
-{% endif %}
-<br>
-{% if att_files %}
-Following attachments, please download if you need:
-<br>
-  {% for file_name,file_url in att_files %}
-      <a href="{{file_url}}">{{file_name}}</a>
-  {% endfor %}
-{% endif %}
-<br>
-<br>
 <table class="tg">
 <thead>
   <tr>

@@ -15,31 +15,22 @@
   </style>
 </head>
 <body>
-Hi ALL:
+Hi all:
 
 <p>The following is the update record of IUR, thanks.</p>
 
-{% if att_files %}
-<p>Following attachments, please download if you need:</p>
-  {% for file_name,file_url in att_files %}
-      <a href="{{file_url}}">{{file_name}}</a>
-  {% endfor %}
-<br>
-{% endif %}
 {% if message %}
 <p>{{ message }}</p>
-{% endif %}
 <br>
+{% endif %}
 
 {% if att_files %}
-Following attachments, please download if you need:
-<br>
+<p> Following attachments, please download if you need:</p>
   {% for file_name,file_url in att_files %}
-      <a href="{{file_url}}">{{file_name}}</a>
+      <a href="{{file_url}}">{{file_name}}</a><br>
   {% endfor %}
+<br>
 {% endif %}
-<br>
-<br>
 <table class="tg">
 <thead>
   <tr>
