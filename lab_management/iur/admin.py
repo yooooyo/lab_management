@@ -858,7 +858,7 @@ class UutAdmin(admin.ModelAdmin):
                         uut.platform_phase = pp
                     uut.scrap = True if scrap else uut.scrap
                     uut.sku = sku if sku else uut.sku
-                    uut.status = status if status else uut.status
+                    uut.status = UutStatus.objects.get(pk=status) if status else uut.status
                     uut.position = position if position else uut.position
                     uut.cpu = cpu if cpu else uut.cpu
                     uut.remark = remark if remark else uut.remark
