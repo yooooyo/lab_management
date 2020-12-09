@@ -50,6 +50,11 @@ class UutStatus(models.Model):
         obj,created = self.objects.get_or_create(status_text='Return 8F')
         return obj
 
+    @classmethod
+    def SCRAP(self):
+        obj,created = self.objects.get_or_create(status_text='Scrap')
+        return obj
+
 class Ap(models.Model):
     id = models.BigAutoField(primary_key=True)
     no = models.CharField(max_length=100)
@@ -355,7 +360,10 @@ class Uut(models.Model):
     sn = models.CharField(unique=True, max_length=50)
     sku = models.CharField(max_length=50, blank=True, null=True)
     cpu = models.CharField(max_length=50, blank=True, null=True)
-    status = models.ForeignKey(UutStatus, models.DO_NOTHING, blank=True, null=True,default=UutStatus.KEEPON())
+    try:
+        status = models.ForeignKey(UutStatus, models.DO_NOTHING, blank=True, null=True,default=UutStatus.KEEPON())
+    except:
+        status = models.ForeignKey("UutStatus", models.DO_NOTHING, blank=True, null=True)
     scrap_reason = models.TextField(blank=True, null=True)
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)

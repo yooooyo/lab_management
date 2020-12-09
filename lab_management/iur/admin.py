@@ -194,13 +194,13 @@ class UutAdmin(admin.ModelAdmin):
 
     def mark_scrap(self,request,queryset):
         if request.user.is_superuser:
-            be_updated = queryset.update(scrap = True)
+            be_updated = queryset.update(scrap = True,status=UutStatus.SCRAP())
             self.message_user(request,ngettext(f'{be_updated} item was mark scrap',f'{be_updated} items were mark scrap',be_updated),messages.SUCCESS)
     mark_scrap.short_description = 'Scrap'
 
     def mark_unscrap(self,request,queryset):
         if request.user.is_superuser:
-            be_updated = queryset.update(scrap = False)
+            be_updated = queryset.update(scrap = False,status=UutStatus.KEEPON)
             self.message_user(request,ngettext(f'{be_updated} item was mark unscrap',f'{be_updated} items were mark unscrap',be_updated),messages.SUCCESS)
     mark_unscrap.short_description = 'UnScrap'
 
@@ -364,11 +364,13 @@ class UutAdmin(admin.ModelAdmin):
     def changelist_view(self, request, extra_context=None):
         
         if not request.user.is_superuser:
-            self.saved_actions = self.actions
-            self.actions=None
+            if not self.saved_actions:
+                self.saved_actions = self.actions
+                self.actions=None
         else:
             if not self.actions:
                 self.actions = self.saved_actions
+                self.saved_actions = None
         
         qs = self.get_queryset(request)
         
