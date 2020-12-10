@@ -258,7 +258,7 @@ class UutAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if request.method == 'POST' and 'uut-save' in request.POST:
-            if not obj.platform or not obj.phase:
+            if not obj.platform_phase:
                 messages.error(request,'Platform or phase empty !')
             else:
                 sn_list = request.POST.getlist('sn')
@@ -266,7 +266,7 @@ class UutAdmin(admin.ModelAdmin):
                 position_list = request.POST.getlist('position')
                 for sn,sku,position in zip(sn_list,sku_list,position_list):
                     if sn:
-                        Uut.objects.create(sn = sn,sku=sku,position=position,phase = obj.phase,platform=obj.platform)
+                        Uut.objects.create(sn = sn,sku=sku,position=position,platform_phase = obj.platform_phase)
                     else:
                         messages.error(request,'SN empty !')
             return
