@@ -132,7 +132,7 @@ class UutAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_display = ('id','platform_with_link','uut_phase','platform_target','platform_group','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
     # list_editable = ('position','cpu','remark')
-    list_filter = ('scrap','status','platform_phase__phase','platform_phase__platform__group','platform_phase__platform__target','position')
+    list_filter = ('scrap','uutborrowhistory__rent_time','status','platform_phase__phase','platform_phase__platform__group','platform_phase__platform__target','position')
     date_hierarchy ='keyin_time'
     list_display_links = ('sn',)
     search_fields = ('sn','platform_phase__platform__codename','uutborrowhistory__member__usernameincompany')

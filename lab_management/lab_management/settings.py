@@ -44,10 +44,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
     'O365',
-    'iur.apps.IurConfig',
+    'iur',
     'rest_framework',
-
-    'oldiur'
+    
+    'cat',
+    'oldiur',
 
 ]
 
@@ -96,7 +97,19 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': '123',
         # 'HOST': '192.168.1.118',
-        'HOST': '192.168.1.115',
+        # 'HOST': '192.168.1.115',
+        # 'HOST': 'lab',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    },
+    'lab':{
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'lab',
+        'USER': 'postgres',
+        'PASSWORD': '123',
+        # 'HOST': '192.168.1.118',
+        # 'HOST': '192.168.1.115',
+        'HOST': 'lab',
         # 'HOST': 'localhost',
         'PORT': '5432',
     },
