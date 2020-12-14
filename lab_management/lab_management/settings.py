@@ -96,9 +96,7 @@ DATABASES = {
         'NAME': 'lab',
         'USER': 'postgres',
         'PASSWORD': '123',
-        # 'HOST': '192.168.1.118',
-        # 'HOST': '192.168.1.115',
-        # 'HOST': 'lab',
+
         'HOST': 'localhost',
         'PORT': '5432',
     },
@@ -107,10 +105,7 @@ DATABASES = {
         'NAME': 'lab',
         'USER': 'postgres',
         'PASSWORD': '123',
-        # 'HOST': '192.168.1.118',
-        # 'HOST': '192.168.1.115',
         'HOST': 'lab',
-        # 'HOST': 'localhost',
         'PORT': '5432',
     },
     'old':{
