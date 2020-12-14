@@ -130,7 +130,7 @@ class UutAdmin(admin.ModelAdmin):
     ###  settings list objects
     # list_max_show_all = 50
     list_per_page = 20
-    list_display = ('id','platform_with_link','uut_phase','platform_target','platform_group','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
+    list_display = ('id','platform_with_link','uut_phase','platform_target','platform_group','platform_cycle','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
     # list_editable = ('position','cpu','remark')
     list_filter = ('scrap','status','platform_phase__phase','platform_phase__platform__group','platform_phase__platform__target','position')
     date_hierarchy ='keyin_time'

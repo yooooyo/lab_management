@@ -17,6 +17,7 @@ class Member(models.Model):
     class Meta:
         managed = True
         db_table = 'member'
+        ordering='usernameincompany'
 
     def __str__(self) -> str:
         return self.usernameincompany
@@ -424,6 +425,7 @@ class UutBorrowHistory(models.Model):
     class Meta:
         managed = True
         db_table = 'uut_borrow_history'
+        
 
 
     def uut_phase(self):
