@@ -1,4 +1,6 @@
+import datetime
 from os import name
+import re
 from oldiur.models import Unittable as ut
 from oldiur.models import IurMailList as iml
 
@@ -14,7 +16,7 @@ from iur.models import UutStatus as us
 from iur.models import PlatformPhase as pp
 
 class Migrate:
-
+    
     def get_365_account():
 
         from O365 import Account,FileSystemTokenBackend,MSOffice365Protocol,MSGraphProtocol,Connection
@@ -67,7 +69,6 @@ class Migrate:
                     'BNB':(pf.GROUP_CHOICE[0][0],pf.TARGET_CHOICE[0][0]),
                     'CNB':(pf.GROUP_CHOICE[1][0],pf.TARGET_CHOICE[0][0])
                     }
-    
     def transferUut(self,uut):
 
         group,target = self.category.get(uut.category,(None,None))
@@ -103,6 +104,49 @@ class Migrate:
 
         print(f"all/fail : {len(self.old_uuts)}/{len(self.old_uuts_fail)}")
 
+    @property
+    def uut_today(self):
+        return ut.objects.using('old').filter(keyintime__gt=datetime.date.today())
+    def transferTodayUuts(self):
+        self.old_uuts_fail.clear()
+        for uut in self.uut_today:
+            # print("----------------")
+            # print(uut)
+            try:
+                self.transferUut(uut)
+                # print('PASS')
+            except Exception as e:
+                self.old_uuts_fail.append({'uut':uut,'e':e})
+
+        print(f"all/fail : {len(self.uut_today)}/{len(self.old_uuts_fail)}")
+
+    sharepoint = get_365_account().sharepoint()
+    configs = []
+    def transferUutConfigs(self):
+        comm_site = self.sharepoint.search_site('comm tech')
+        if comm_site:
+            comm_site = comm_site[0]
+            validation_lib = [lib for lib in comm_site.list_document_libraries() if lib.name == 'Validation and Quality Program']
+            if validation_lib:
+                validation_lib = validation_lib[0] if len(validation_lib) == 1 else None
+                iur_folder = validation_lib.get_item_by_path('/IUR')
+                self.configs.clear()
+                for config_folder in iur_folder.get_child_folders():
+                    self.list_items_in_folder(config_folder)
+                if self.configs:
+                    pass
+
+            else:
+                raise Exception('Validation and Quality Program Not Found')
+        else:
+            raise Exception('Comm Tech Site Not Found')
+
+    def list_items_in_folder(self,obj):
+        if obj.is_folder:
+            for folder in obj.get_items():
+                self.list_items_in_folder(folder)
+        if obj.is_file and obj.name.lower().find('config')>0:
+            self.configs.append(obj)
 
     def fix(self):
         def assignMailAddr(uut,unit,mail):
