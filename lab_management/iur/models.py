@@ -17,7 +17,7 @@ class Member(models.Model):
     class Meta:
         managed = True
         db_table = 'member'
-        ordering='usernameincompany'
+        ordering=['usernameincompany']
 
     def __str__(self) -> str:
         return self.usernameincompany
