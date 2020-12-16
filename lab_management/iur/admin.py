@@ -488,11 +488,18 @@ class UutAdmin(admin.ModelAdmin):
 
             selected_sn = request.POST.getlist('selectSn',None)
             selected_sn = list(set(selected_sn))
+
+
+            
             if '' in selected_sn:
                 selected_sn.remove('')
             if selected_sn :
                 selected = True
-                qs = qs.filter(sn__in=selected_sn)
+                selected_sn_A5CD = selected_sn.copy()
+                selected_sn_A5CD = [ re.sub('5CD','A5CD',sn) for sn in selected_sn_A5CD]
+                qs_A5CD = qs.filter(sn__in=selected_sn_A5CD)    
+                qs_normal = qs.filter(sn__in=selected_sn)
+                qs = qs_normal if qs_normal.count()>qs_A5CD.count() else qs_A5CD
 
             if qs.count() > 20 and selected:
                 self.list_per_page = qs.count()
