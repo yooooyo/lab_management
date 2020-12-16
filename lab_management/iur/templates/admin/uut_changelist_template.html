@@ -87,14 +87,18 @@ label.select-all input{
     </button>
 
     <!-- Modal -->
-    <div class="modal fade" id="advsearch-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="advsearch-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" style="overflow: scroll">
     <div class="modal-dialog">
         <div class="modal-content">
         <div class="modal-header">
             <h5 class="modal-title" id="exampleModalLabel">Advance Filter</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-            </button>
+
+            <div class="col-row">
+                <div class="col-12">
+
+                </div>
+            </div>
+
         </div>
         <div class="modal-body">
             {% block dropdownfilter %}
@@ -156,6 +160,17 @@ label.select-all input{
 
 <script>
 
+detectSelected = function(){
+    $('.checkbox-menu').each(function(){
+        if($(this).find('.dropdowndata').find('li.active').length>0){
+            $(this).siblings("button").first().removeClass('btn-default').addClass('btn-success');
+        }
+        if($(this).find('.dropdowndata').find('li.active').length==0){
+            $(this).siblings("button").first().removeClass('btn-success').addClass('btn-default');
+        }
+    })
+}
+
 
 $('#changelist-adv-search').keydown(function (e) {
     if (e.keyCode == 13) {
@@ -183,6 +198,7 @@ $(".uut-multi-searcher-cell").last().on("keydown","input[type='text']",function(
 
 $(".checkbox-menu").on("change", "input[type='checkbox']", function() {
    $(this).closest("li").toggleClass("active", this.checked);
+   detectSelected();
 });
 $(".select-all").on("change", "input[type='checkbox']", function() {
     let check =  $(this)
@@ -200,6 +216,11 @@ $(".select-all").on("change", "input[type='checkbox']", function() {
             }
         }
     });
+    detectSelected();
+});
+
+$(document).ready(function() {
+    detectSelected();
 });
 $(document).on('click', '.allow-focus', function (e) {
   e.stopPropagation();
