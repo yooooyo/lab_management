@@ -65,7 +65,7 @@ class PlatformConfigAdmin(admin.ModelAdmin):
 class PlatformPhaseAdmin(admin.ModelAdmin):
     list_display=['id','platform','phase','config']
     list_editable = ['platform','phase','config']
-
+    list_filter = ['phase']
     search_fields=['platform__codename']
     list_select_related =  ('platform','phase')
     autocomplete_fields = ['platform','phase','config']
@@ -74,14 +74,15 @@ class PlatformPhaseInline(admin.TabularInline):
     model = PlatformPhase
     extra = 2
     autocomplete_fields = ('config',)
-    fieldsets = (
-        (None, {
-            "fields": (
-                'phase','config'
-            ),
+    # fieldsets = (
+    #     (None, {
+    #         "fields": (
+    #             'phase','config__config_name','config__config_url'
+    #         ),
             
-        }),
-    )
+    #     }),
+    # )
+    fields = (('phase','config'),)
     
 
 @admin.register(Platform)
@@ -109,6 +110,14 @@ class PlatformAdmin(admin.ModelAdmin):
             # "description":'<code> UUT storage information </code>',
         }),
     )
+
+    change_form_template = 'admin/platform_change_form_template.html'
+
+    def change_view(self, request, object_id, form_url='', extra_context=None) -> HttpResponse:
+        if not request.user.is_superuser:
+            platformphase = Platform.objects.get(id = object_id).platformphase_set.all()
+            extra_context = {'platformphase_set':platformphase}
+        return super().change_view(request, object_id, form_url=form_url, extra_context=extra_context)
 
 @admin.register(UutBorrowHistory)
 class UutBorrowHistoryAdmin(admin.ModelAdmin):
