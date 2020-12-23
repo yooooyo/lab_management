@@ -798,6 +798,10 @@ class UutAdmin(admin.ModelAdmin):
             if last_record and last_record.member != member:
                 last_record = self.rent_back_uut(uut,last_record)
                 return_records |= UutBorrowHistory.objects.filter(pk = last_record.id)
+            elif last_record and last_record.member == member:
+                last_record.purpose = purpose
+                last_record.save()
+                borrow_records |= UutBorrowHistory.objects.filter(pk = last_record.id)
             if not last_record or last_record.back_time:
                 new_record = uut.uutborrowhistory_set.create(
                     member = member,
