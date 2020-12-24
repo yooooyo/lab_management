@@ -275,7 +275,7 @@ class UutAdmin(admin.ModelAdmin):
                 position_list = request.POST.getlist('position')
                 for sn,sku,position in zip(sn_list,sku_list,position_list):
                     if sn:
-                        Uut.objects.create(sn = sn,sku=sku,position=position,platform_phase = obj.platform_phase)
+                        Uut.objects.create(sn = sn.upper(),sku=sku,position=position,platform_phase = obj.platform_phase)
                     else:
                         messages.error(request,'SN empty !')
             return
