@@ -135,7 +135,7 @@ class UutAdmin(admin.ModelAdmin):
 
     #### settings
     # using = 'labpostgres' 
-
+    enable_nav_sidebar = False
     ###  settings list objects
     # list_max_show_all = 50
     list_per_page = 20
@@ -315,11 +315,22 @@ class UutAdmin(admin.ModelAdmin):
         
         def format_html(self):
             if self.dataList:
-                for Id,data in self.dataList:
-                    if str(Id) in self.saved or data in self.default:
-                        self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data}</label></li>'
-                    else:
-                        self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}"> {data}</label></li>'
+                for datas in self.dataList:
+                    if len(datas)<2:
+                        Id,data = datas
+                        if str(Id) in self.saved or data in self.default:
+                            self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data}</label></li>'
+                        else:
+                            self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value=" {Id}"> {data}</label></li>'
+                    elif len(datas)==3:
+                        Id,data,cycle = datas
+                        if str(Id) in self.saved or data in self.default:
+                            self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data} - {cycle}</label></li>'
+                        else:
+                            if cycle:
+                                self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}"> {data} - {cycle}</label></li>'
+                            else:
+                                self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}"> {data} </label></li>'
                 return format_html(self.template)
         
         def keep_filter_list(self,selected_list):
@@ -327,7 +338,7 @@ class UutAdmin(admin.ModelAdmin):
                 return self.saved
 
     def advance_search_dropdown_filter(self,qs):
-        platform = qs.order_by('platform_phase__platform__codename').values_list('platform_phase__platform__id','platform_phase__platform__codename').distinct()
+        platform = qs.order_by('platform_phase__platform__codename').values_list('platform_phase__platform__id','platform_phase__platform__codename','platform_phase__platform__cycle').distinct()
         platform = self.Dropdown('Platform',platform)
         self.saved_dropdown_dict.update({'platform':platform})
 
