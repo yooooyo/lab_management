@@ -303,6 +303,7 @@ class UutPhase(models.Model):
     class Meta:
         managed = True
         db_table = 'uut_phase'
+        ordering = ['phase_text']
 
     def __str__(self) -> str:
         return self.phase_text
@@ -321,6 +322,12 @@ class PlatformPhase(models.Model):
 
     def __str__(self) -> str:
         return f'{self.platform.codename} - {self.phase.phase_text}'
+
+    def config_name(self):
+        return self.config.config_name
+
+    def config_url(self):
+        return self.config.config_url
 
     
 
