@@ -281,7 +281,7 @@ class Platform(models.Model):
         db_table = 'platform'
 
     def __str__(self) -> str:
-        return self.codename
+        return f'{self.codename} - {self.cycle}' 
 
 
 class PlatformConfig(models.Model):
@@ -320,7 +320,7 @@ class PlatformPhase(models.Model):
 
 
     def __str__(self) -> str:
-        return f'{self.platform.codename} - {self.phase.phase_text}'
+        return f'{self.platform.codename} - {self.platform.cycle} - {self.phase.phase_text}'
 
     
 

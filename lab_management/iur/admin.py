@@ -316,7 +316,7 @@ class UutAdmin(admin.ModelAdmin):
         def format_html(self):
             if self.dataList:
                 for datas in self.dataList:
-                    if len(datas)<2:
+                    if len(datas)<=2:
                         Id,data = datas
                         if str(Id) in self.saved or data in self.default:
                             self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data}</label></li>'
