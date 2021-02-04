@@ -17,13 +17,23 @@ from django.contrib import admin
 from django.urls import path,include
 
 from rest_framework import routers
-from iur import views
-
+import iur.views
+import cat.views
 
 router = routers.DefaultRouter()
-router.register(r'users',views.UserViewSet)
-router.register(r'groups',views.GroupViewSet)
-router.register(r'uuts',views.UutViewSet)
+router.register(r'users',iur.views.UserViewSet)
+router.register(r'groups',iur.views.GroupViewSet)
+router.register(r'uuts',iur.views.UutViewSet)
+router.register(r'platforms',iur.views.PlatformViewSet)
+router.register(r'platformconfigs',iur.views.PlatformConfigViewSet)
+router.register(r'uutphases',iur.views.UutPhaseViewSet)
+router.register(r'uutstatus',iur.views.UutStatusViewSet)
+router.register(r'platformphases',iur.views.PlatformPhaseViewSet)
+router.register(r'tasks',cat.views.TaskViewSet)
+router.register(r'scripts',cat.views.ScriptViewSet)
+router.register(r'aps',cat.views.ApViewSet)
+router.register(r'taskstatus',cat.views.TaskStatusViewSet)
+
 
 urlpatterns = [
     path('api/',include(router.urls)),

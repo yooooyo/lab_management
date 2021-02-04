@@ -139,6 +139,7 @@ class Uut(models.Model):
         status = models.ForeignKey(UutStatus, models.DO_NOTHING, blank=True, null=True,default=UutStatus.KEEPON())
     except:
         status = models.ForeignKey("UutStatus", models.DO_NOTHING, blank=True, null=True)
+    # status = models.ForeignKey("UutStatus", models.DO_NOTHING, blank=True, null=True)
     scrap_reason = models.TextField(blank=True, null=True)
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)

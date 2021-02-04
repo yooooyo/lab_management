@@ -30,7 +30,8 @@ ALLOWED_HOSTS = ['*']
 # REST_FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+
 }
 
 # Application definition
@@ -46,7 +47,6 @@ INSTALLED_APPS = [
     'O365',
     'iur',
     'rest_framework',
-    
     'cat',
     'oldiur',
 
@@ -97,7 +97,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': '123',
 
-        'HOST': 'localhost',
+        'HOST': 'lab',
         'PORT': '5432',
     },
     'lab':{
