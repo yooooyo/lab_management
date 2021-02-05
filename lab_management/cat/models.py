@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.fields import JSONField
 from django.contrib.auth.models import User
+from django.db.models import Q 
 import uuid
 
 from django.db.models.fields import BigIntegerField, TextField, URLField
@@ -37,11 +38,20 @@ class Ap(models.Model):
     is_active = models.BooleanField(default=False)
     is_scrap = models.BooleanField(default=False)
     is_default = models.BooleanField(default=False)
+
     class Meta:
         managed = True
         db_table = 'ap'
     def __str__(self) -> str:
         return self.name
+    
+    @classmethod
+    def find_by_ssid(self,ssid):
+        return self.objects.filter(Q(ssid_2d4__iexact=ssid)|Q(ssid_5__iexact=ssid))
+    
+    @classmethod
+    def get_default_ap(self):
+        return self.objects.get(is_default=True)
 
 
 class ApBorrowHistory(models.Model):

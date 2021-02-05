@@ -25,7 +25,6 @@ class TaskViewSet(viewsets.ModelViewSet):
     def format_post_request(self,request:Request):
         data ={}
         uut = request.data.get('sn',None)
-        # uut = UutSerializer(Uut.objects.get(sn__iexact=uut)) if uut else uut
         uut = Uut.objects.get(sn__iexact=uut) if uut else uut
         uut_uuid = request.data.get('uut_uuid',None)
         uut_uuid = str(uuid.uuid4()) if not uut and not uut_uuid else uut_uuid
@@ -35,16 +34,13 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         uut_info = request.data.get('uut_info',None)
         script = request.data.get('script',None)
-        # script = ScriptSerializer(Script.objects.get(name__iexact=script))
         script = Script.objects.get(name__iexact=script)
-        # status = TaskStatusSerializer(TaskStatus.objects.get(status_text__iexact='wait'))
-        status = TaskStatus.objects.get(status_text__iexact='wait')
+        task_status = TaskStatus.objects.get(status_text__iexact='wait')
         ap = request.data.get('ssid',None)
         if ap:
-            ap =  Ap.objects.get(Q(ssid_2d4__iexact=ap)|Q(ssid_5__iexact=ap))
+            ap =  Ap.find_by_ssid(ap)
         else:
             ap = Ap.objects.get(is_default=True)
-        # ap = ApSerializer(ap)
         task_group = request.data.get('task_group',None)
         task_group = Task.objects.filter(task_group__iexact=task_group) if task_group else task_group
         group_series=0
@@ -56,7 +52,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         data.update({
             'script':script.id,
-            'status':status.id,
+            'status':task_status.id,
             'ap':ap.id,
             'uut_info':uut_info,
             'task_group':task_group,
@@ -75,13 +71,30 @@ class TaskViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+
     def perform_update(self, serializer):
         return super().perform_update(serializer)
 
+    def format_put_request(self,request:Request):
+        data = request.data.copy()
+        script = data.get('script',None)
+        script = Script.objects.get(name__iexact=script).id if script else script
+        if script:
+            data.update({'script':script.id})
+        ssid = request.data.get('ssid',None)
+        ap = Ap.find_by_ssid(ssid)
+        if ap:
+            data.update({'ap':ap.id})
+        task_status = request.data.get('status',None)
+        task_status = TaskStatus.objects.get(status_text__iexact = task_status)
+        if task_status:
+            data.update({'status':task_status.id})
+        return data
+
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        data = self.format_put_request(request)
+        serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
@@ -92,9 +105,6 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-
-
-    
 
 class ScriptViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Script.objects.all()
