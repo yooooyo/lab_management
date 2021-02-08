@@ -33,6 +33,7 @@ router.register(r'tasks',cat.views.TaskViewSet)
 router.register(r'scripts',cat.views.ScriptViewSet)
 router.register(r'aps',cat.views.ApViewSet)
 router.register(r'taskstatus',cat.views.TaskStatusViewSet)
+router.register(r'taskissues',cat.views.TaskIssueViewSet)
 
 
 urlpatterns = [

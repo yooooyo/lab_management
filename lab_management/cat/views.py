@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import viewsets,permissions
 from iur.serializers import Uut,UutSerializer,Member,MemberSerializer
-from .serializers import TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus
-from django.db.models import Q 
+from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus
+from django.db.models import Q, query 
 from rest_framework import status
 import uuid
 
@@ -18,9 +18,30 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         task_group = self.request.query_params.get('task_group',None)
+        task_id = self.request.query_params.get('task_id',None)
+        sn = self.request.query_params.get('sn',None)
+        uut_uuid = self.request.query_params.get('uut_uuid',None)
+        task = self.request.query_params.get('task',None)
+        if task and sn:
+            if task == 'current':
+                queryset = queryset.filter(Q(uut__sn__iexact=sn))
+            elif task == 'previous':
+                queryset = queryset.filter(uut_uuid=uut_uuid)
+            elif task == 'next':
+                queryset = queryset.filter(uut_uuid=uut_uuid)
+            return queryset
         if task_group:
             queryset = queryset.filter(task_group=task_group)
+        if task_id:
+            queryset = queryset.filter(id=task_id)
+        if sn:
+            queryset = queryset.filter(uut__sn__iexact=sn)
+        if uut_uuid:
+            queryset = queryset.filter(uut_uuid=uut_uuid)
         return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
     
     def format_post_request(self,request:Request):
         data ={}
@@ -41,22 +62,45 @@ class TaskViewSet(viewsets.ModelViewSet):
             ap =  Ap.find_by_ssid(ap)
         else:
             ap = Ap.objects.get(is_default=True)
-        task_group = request.data.get('task_group',None)
-        task_group = Task.objects.filter(task_group__iexact=task_group) if task_group else task_group
-        group_series=0
-        if task_group:
-            group_series = task_group.order_by('-group_series').first().group_series + 1
-            task_group = task_group.first().task_group
-        else:
-            task_group = str(uuid.uuid4())
 
+        # add by group_uuid or group_name
+        group_uuid = request.data.get('group_uuid',None)
+        group_name = request.data.get('group_name',None)
+        # priority select
+        tasks = None
+        tasks_by_group = None
+        if uut: tasks = Task.objects.filter(uut=uut)
+        elif uut_uuid: tasks = Task.objects.filter(uut_uuid = uut_uuid)
+
+        if group_name:
+            pre_tasks = tasks.filter(group_name=group_name) 
+            if pre_tasks.count()>0: tasks_by_group = pre_tasks
+        elif group_uuid:
+            pre_tasks = tasks.filter(group_uuid=group_uuid)
+            if pre_tasks.count()>0: tasks_by_group = pre_tasks
+            
+        # already filter tasks by group name or group uuid, indentify task series in task group
+        group_task_series = 0
+        group_series = None
+        if tasks_by_group:
+            task = tasks_by_group.order_by('-group_task_series').first()
+            group_task_series = task.group_task_series + 1
+            group_uuid = task.group_uuid
+            group_series = task.group_series
+        else:
+            group_uuid = str(uuid.uuid4())
+            group_series = tasks.values_list("group_series",flat=True)
+            group_series = max(group_series)+1 if group_series else 0
+            
         data.update({
             'script':script.id,
             'status':task_status.id,
             'ap':ap.id,
             'uut_info':uut_info,
-            'task_group':task_group,
-            'group_series':group_series
+            'group_uuid':group_uuid,
+            'group_series':group_series,
+            'group_name':group_name,
+            'group_task_series':group_task_series
         })
         return data
     
@@ -141,5 +185,20 @@ class TaskStatusViewSet(viewsets.ReadOnlyModelViewSet):
         if status:
             queryset = queryset.filter(status_text__iexact=status)
         return queryset
+
+class TaskIssueViewSet(viewsets.ModelViewSet):
+    queryset = TaskIssue.objects.all()
+    serializer_class = TaskIssueSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        return super().perform_create(serializer)
+
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+
+
+
 
 

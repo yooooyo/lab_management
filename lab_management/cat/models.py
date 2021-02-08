@@ -165,12 +165,14 @@ class Task(models.Model):
     id = models.BigAutoField(primary_key=True)
     uut = models.ForeignKey('iur.Uut',on_delete=models.CASCADE,null=True,blank=True)
     uut_uuid = models.UUIDField(null=True,blank=True)
+    group_uuid = models.UUIDField()
+    group_series = models.BigIntegerField(null=False,blank=False)
+    group_name = models.CharField(max_length=50,blank=True,null=True)
+    group_task_series = models.BigIntegerField(blank=True,null=True)
     script = models.ForeignKey(Script,on_delete=models.CASCADE,null=False)
     status = models.ForeignKey(TaskStatus,on_delete=models.CASCADE,null=False)
     ap = models.ForeignKey(Ap,on_delete=models.CASCADE,blank = True,null=True)
     assigner = models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
-    task_group = models.UUIDField()
-    group_series = models.BigIntegerField(null=False,blank=False)
     uut_info = JSONField(blank=True,null=True)
     power_cycle_info = JSONField(blank=True,null=True)
     start_time = models.DateTimeField(blank=True,null=True)
@@ -181,7 +183,7 @@ class Task(models.Model):
     class Meta:
         managed = True
         db_table='uut_task'# This is an auto-generated Django model module.
-        unique_together=['group_series','task_group']
+        unique_together=['group_task_series','group_uuid']
 
     # objects = TaskManager()
 
@@ -206,7 +208,7 @@ class TaskIssue(models.Model):
     title = models.CharField(max_length=50,null=True,blank=True)
     level = models.CharField(max_length=50,null=True,blank=True)
     task=models.ForeignKey(Task,on_delete=models.CASCADE)
-    power_state = BigIntegerField()
+    power_state = models.ForeignKey(PowerState,null=True,blank=True,on_delete=models.CASCADE)
     device_driver = JSONField(null=True,blank=True)
     function = JSONField(null=True,blank=True)
     description = TextField(null=True,blank=True)
