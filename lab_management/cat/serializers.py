@@ -55,21 +55,26 @@ class TaskIssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskIssue
         fields='__all__'
+    
+    def create(self, validated_data):
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title',instance.title)
+        instance.level = validated_data.get('level',instance.level)
+        instance.task = validated_data.get('task',instance.task)
+        instance.power_state = validated_data.get('power_state',instance.power_state)
+        instance.device_driver = validated_data.get('device_driver',instance.device_driver)
+        instance.function = validated_data.get('function',instance.function)
+        instance.description = validated_data.get('description',instance.description)
+        return super().update(instance, validated_data)
 
 class TaskSerializer(serializers.ModelSerializer):
-    # uut = UutSerializer()
-    # script = ScriptSerializer()
-    # status = TaskStatusSerializer()
-    # ap = ApSerializer()
-    # assigner = MemberSerializer()
-    # script = serializers.PrimaryKeyRelatedField(queryset=Script.objects.all(),required=False)
-    # status = serializers.PrimaryKeyRelatedField(queryset=TaskStatus.objects.all(),required=False)
     class Meta:
         model = Task
         fields='__all__'
     
     def create(self, validated_data):
-        
         return Task.objects.create(**validated_data)
 
     def update(self,instance,validated_data):

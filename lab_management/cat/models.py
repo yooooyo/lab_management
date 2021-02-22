@@ -184,6 +184,9 @@ class Task(models.Model):
         managed = True
         db_table='uut_task'# This is an auto-generated Django model module.
         unique_together=['group_task_series','group_uuid']
+     
+    def __str__(self) -> str:
+        return f'{self.id} - {self.uut} - {self.group_name} - {self.script} {self.status}'
 
     # objects = TaskManager()
 
@@ -195,6 +198,9 @@ class PowerState(models.Model):
     class Meta:
         managed=True
         db_table = 'power_state'
+    
+    def __str__(self) -> str:
+        return self.name
 
 class TaskFunction(models.Model):
     name = models.CharField(max_length=50,unique=True)

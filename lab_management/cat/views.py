@@ -3,9 +3,9 @@
 # Create your views here.
 from rest_framework.response import Response
 from rest_framework.request import Request
-from rest_framework import viewsets,permissions
+from rest_framework import serializers, viewsets,permissions
 from iur.serializers import Uut,UutSerializer,Member,MemberSerializer
-from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus
+from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus,PowerState,PowerStateSerializer
 from django.db.models import Q, query 
 from rest_framework import status
 import uuid
@@ -24,11 +24,11 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.request.query_params.get('task',None)
         if task and sn:
             if task == 'current':
-                queryset = queryset.filter(Q(uut__sn__iexact=sn))
+                queryset = queryset.filter(Q(uut__sn__iexact=sn) & Q(status__status_text__iexact='run'))
             elif task == 'previous':
-                queryset = queryset.filter(uut_uuid=uut_uuid)
+                queryset = queryset.filter(uut_uuid=uut_uuid) # not yet
             elif task == 'next':
-                queryset = queryset.filter(uut_uuid=uut_uuid)
+                queryset = queryset.filter(uut_uuid=uut_uuid) # not yet
             return queryset
         if task_group:
             queryset = queryset.filter(task_group=task_group)
@@ -122,17 +122,31 @@ class TaskViewSet(viewsets.ModelViewSet):
     def format_put_request(self,request:Request):
         data = request.data.copy()
         script = data.get('script',None)
-        script = Script.objects.get(name__iexact=script).id if script else script
         if script:
+            script = Script.objects.get(name__iexact=script).id if script else script
             data.update({'script':script.id})
         ssid = request.data.get('ssid',None)
         ap = Ap.find_by_ssid(ssid)
         if ap:
             data.update({'ap':ap.id})
         task_status = request.data.get('status',None)
-        task_status = TaskStatus.objects.get(status_text__iexact = task_status)
         if task_status:
+            task_status = TaskStatus.objects.get(status_text__iexact = task_status)
             data.update({'status':task_status.id})
+        group_uuid = data.get('group_uuid',None)
+        group_name = data.get('group_name',None)
+
+        tasks = None
+        if group_uuid:
+            tasks = Task.objects.filter(group_uuid = group_uuid).order_by('-group_task_series')
+        if group_name:
+            tasks = Task.objects.filter(group_name = group_name).order_by('-group_task_series')
+        if tasks:
+            task = tasks.first()
+            group_series = task.group_series
+            group_task_series = task.group_task_series + 1
+            data.update({'group_series':group_series})
+            data.update({'group_task_series':group_task_series})
         return data
 
     def update(self, request, *args, **kwargs):
@@ -194,9 +208,59 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         return super().perform_create(serializer)
 
+    def format_post_request(self,request:Request):
+        data={}
+        title = request.data.get('title',None)
+        level = request.data.get('level',None)
+        task = request.data.get('task',None)
+        power_state = request.data.get('power_state',None)
+        device_driver = request.data.get('device_driver',None)
+        function = request.data.get('function',None)
+        description = request.data.get('description',None)
+        if power_state:
+            power_state = PowerState.objects.get(name__iexact=power_state).id
+        data.update(
+            {
+                'title':title,
+                'level':level,
+                'task':task,
+                'power_state':power_state,
+                'device_driver':device_driver,
+                'function':function,
+                'description':description,
+            }
+        )
+        return data
+
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-    
+        data = self.format_post_request(request)
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def format_put_request(self,request:Request):
+        data = request.data.copy()
+        power_state = data.get('power_state',None)
+        if power_state:
+            power_state = PowerState.objects.get(name__iexact=power_state).id
+            data.update({'power_state':power_state})
+        return data
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = self.format_put_request(request)
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 
 
