@@ -65,7 +65,7 @@ class PlatformConfigAdmin(admin.ModelAdmin):
 class PlatformPhaseAdmin(admin.ModelAdmin):
     list_display=['id','platform','phase','config']
     list_editable = ['platform','phase','config']
-
+    list_filter = ['phase']
     search_fields=['platform__codename']
     list_select_related =  ('platform','phase')
     autocomplete_fields = ['platform','phase','config']
@@ -74,14 +74,15 @@ class PlatformPhaseInline(admin.TabularInline):
     model = PlatformPhase
     extra = 2
     autocomplete_fields = ('config',)
-    fieldsets = (
-        (None, {
-            "fields": (
-                'phase','config'
-            ),
+    # fieldsets = (
+    #     (None, {
+    #         "fields": (
+    #             'phase','config__config_name','config__config_url'
+    #         ),
             
-        }),
-    )
+    #     }),
+    # )
+    fields = (('phase','config'),)
     
 
 @admin.register(Platform)
@@ -110,6 +111,14 @@ class PlatformAdmin(admin.ModelAdmin):
         }),
     )
 
+    change_form_template = 'admin/platform_change_form_template.html'
+
+    def change_view(self, request, object_id, form_url='', extra_context=None) -> HttpResponse:
+        if not request.user.is_superuser:
+            platformphase = Platform.objects.get(id = object_id).platformphase_set.all()
+            extra_context = {'platformphase_set':platformphase}
+        return super().change_view(request, object_id, form_url=form_url, extra_context=extra_context)
+
 @admin.register(UutBorrowHistory)
 class UutBorrowHistoryAdmin(admin.ModelAdmin):
     list_display = ('id','uut','member','purpose','rent_time','back_time')
@@ -126,11 +135,11 @@ class UutAdmin(admin.ModelAdmin):
 
     #### settings
     # using = 'labpostgres' 
-
+    enable_nav_sidebar = False
     ###  settings list objects
     # list_max_show_all = 50
     list_per_page = 20
-    list_display = ('id','platform_with_link','uut_phase','platform_target','platform_group','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
+    list_display = ('id','platform_with_link','uut_phase','platform_target','platform_group','platform_cycle','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
     # list_editable = ('position','cpu','remark')
     list_filter = ('scrap','uutborrowhistory__rent_time','status','platform_phase__phase','platform_phase__platform__group','platform_phase__platform__target','position')
     date_hierarchy ='keyin_time'
@@ -258,7 +267,7 @@ class UutAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if request.method == 'POST' and 'uut-save' in request.POST:
-            if not obj.platform or not obj.phase:
+            if not obj.platform_phase:
                 messages.error(request,'Platform or phase empty !')
             else:
                 sn_list = request.POST.getlist('sn')
@@ -266,7 +275,7 @@ class UutAdmin(admin.ModelAdmin):
                 position_list = request.POST.getlist('position')
                 for sn,sku,position in zip(sn_list,sku_list,position_list):
                     if sn:
-                        Uut.objects.create(sn = sn,sku=sku,position=position,phase = obj.phase,platform=obj.platform)
+                        Uut.objects.create(sn = sn.upper(),sku=sku,position=position,platform_phase = obj.platform_phase)
                     else:
                         messages.error(request,'SN empty !')
             return
@@ -306,11 +315,22 @@ class UutAdmin(admin.ModelAdmin):
         
         def format_html(self):
             if self.dataList:
-                for Id,data in self.dataList:
-                    if str(Id) in self.saved or data in self.default:
-                        self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data}</label></li>'
-                    else:
-                        self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}"> {data}</label></li>'
+                for datas in self.dataList:
+                    if len(datas)<=2:
+                        Id,data = datas
+                        if str(Id) in self.saved or data in self.default:
+                            self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data}</label></li>'
+                        else:
+                            self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value=" {Id}"> {data}</label></li>'
+                    elif len(datas)==3:
+                        Id,data,cycle = datas
+                        if str(Id) in self.saved or data in self.default:
+                            self.template += f'<li class="active" value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}" checked> {data} - {cycle}</label></li>'
+                        else:
+                            if cycle:
+                                self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}"> {data} - {cycle}</label></li>'
+                            else:
+                                self.template += f'<li value={data}><label><input type="checkbox" name="select{self.buttonName}" value="{Id}"> {data} </label></li>'
                 return format_html(self.template)
         
         def keep_filter_list(self,selected_list):
@@ -318,7 +338,7 @@ class UutAdmin(admin.ModelAdmin):
                 return self.saved
 
     def advance_search_dropdown_filter(self,qs):
-        platform = qs.order_by('platform_phase__platform__codename').values_list('platform_phase__platform__id','platform_phase__platform__codename').distinct()
+        platform = qs.order_by('platform_phase__platform__codename').values_list('platform_phase__platform__id','platform_phase__platform__codename','platform_phase__platform__cycle').distinct()
         platform = self.Dropdown('Platform',platform)
         self.saved_dropdown_dict.update({'platform':platform})
 
@@ -488,11 +508,18 @@ class UutAdmin(admin.ModelAdmin):
 
             selected_sn = request.POST.getlist('selectSn',None)
             selected_sn = list(set(selected_sn))
+
+
+            
             if '' in selected_sn:
                 selected_sn.remove('')
             if selected_sn :
                 selected = True
-                qs = qs.filter(sn__in=selected_sn)
+                selected_sn_A5CD = selected_sn.copy()
+                selected_sn_A5CD = [ re.sub('5CD','A5CD',sn) for sn in selected_sn_A5CD]
+                qs_A5CD = qs.filter(sn__in=selected_sn_A5CD)    
+                qs_normal = qs.filter(sn__in=selected_sn)
+                qs = qs_normal if qs_normal.count()>qs_A5CD.count() else qs_A5CD
 
             if qs.count() > 20 and selected:
                 self.list_per_page = qs.count()
@@ -782,6 +809,10 @@ class UutAdmin(admin.ModelAdmin):
             if last_record and last_record.member != member:
                 last_record = self.rent_back_uut(uut,last_record)
                 return_records |= UutBorrowHistory.objects.filter(pk = last_record.id)
+            elif last_record and last_record.member == member:
+                last_record.purpose = purpose
+                last_record.save()
+                borrow_records |= UutBorrowHistory.objects.filter(pk = last_record.id)
             if not last_record or last_record.back_time:
                 new_record = uut.uutborrowhistory_set.create(
                     member = member,

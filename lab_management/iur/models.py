@@ -17,6 +17,7 @@ class Member(models.Model):
     class Meta:
         managed = True
         db_table = 'member'
+        ordering=['usernameincompany']
 
     def __str__(self) -> str:
         return self.usernameincompany
@@ -88,7 +89,7 @@ class Platform(models.Model):
         db_table = 'platform'
 
     def __str__(self) -> str:
-        return self.codename
+        return f'{self.codename} - {self.cycle}' 
 
 
 class PlatformConfig(models.Model):
@@ -110,6 +111,7 @@ class UutPhase(models.Model):
     class Meta:
         managed = True
         db_table = 'uut_phase'
+        ordering = ['phase_text']
 
     def __str__(self) -> str:
         return self.phase_text
@@ -127,7 +129,13 @@ class PlatformPhase(models.Model):
 
 
     def __str__(self) -> str:
-        return f'{self.platform.codename} - {self.phase.phase_text}'
+        return f'{self.platform.codename} - {self.platform.cycle} - {self.phase.phase_text}'
+
+    def config_name(self):
+        return self.config.config_name
+
+    def config_url(self):
+        return self.config.config_url
 
 
 class Uut(models.Model):
@@ -200,6 +208,7 @@ class UutBorrowHistory(models.Model):
     class Meta:
         managed = True
         db_table = 'uut_borrow_history'
+        
 
 
     def uut_phase(self):
