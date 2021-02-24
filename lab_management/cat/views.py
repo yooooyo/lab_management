@@ -56,7 +56,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         uut_info = request.data.get('uut_info',None)
         script = request.data.get('script',None)
         script = Script.objects.get(name__iexact=script)
-        task_status = TaskStatus.objects.get(status_text__iexact='wait')
+
         ap = request.data.get('ssid',None)
         if ap:
             ap =  Ap.find_by_ssid(ap)
@@ -91,7 +91,13 @@ class TaskViewSet(viewsets.ModelViewSet):
             group_uuid = str(uuid.uuid4())
             group_series = tasks.values_list("group_series",flat=True)
             group_series = max(group_series)+1 if group_series else 0
-            
+
+        task_status = request.data.get('status',None)
+        if task_status:
+            task_status = TaskStatus.objects.get(status_text__iexact=task_status)
+
+        start_time = request.data.get('start_time',None)
+
         data.update({
             'script':script.id,
             'status':task_status.id,
@@ -100,7 +106,8 @@ class TaskViewSet(viewsets.ModelViewSet):
             'group_uuid':group_uuid,
             'group_series':group_series,
             'group_name':group_name,
-            'group_task_series':group_task_series
+            'group_task_series':group_task_series,
+            'start_time':start_time
         })
         return data
     
@@ -172,8 +179,11 @@ class ScriptViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         name = self.request.query_params.get('name',None)
+        scripts = self.request.query_params.get('scripts',None)
         if name:
             queryset = queryset.filter(name__iexact=name)
+        if scripts:
+            queryset = queryset.all()
         return queryset
 
 class ApViewSet(viewsets.ReadOnlyModelViewSet):
