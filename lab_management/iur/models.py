@@ -392,9 +392,17 @@ class Uut(models.Model):
         return self.platform_phase.platform.codename
 
     @property
+    def last_borrowed(self):
+         return self.uutborrowhistory_set.filter(back_time__isnull=True).first() 
+
+    @property
     def borrower(self):
-        unreturn_history = self.uutborrowhistory_set.filter(back_time__isnull=True)
-        return '-' if not unreturn_history.count() else unreturn_history.order_by('-rent_time').first().member.usernameincompany
+        history = self.last_borrowed
+        return '-' if not history else history.member.usernameincompany
+
+    def borrow_purpose(self):
+        history = self.last_borrowed
+        return '-' if not history else history.purpose
     
 
     def platform_name(self):
