@@ -139,7 +139,7 @@ class UutAdmin(admin.ModelAdmin):
     ###  settings list objects
     # list_max_show_all = 50
     list_per_page = 20
-    list_display = ('id','platform_with_link','uut_phase','platform_target','platform_group','platform_cycle','sku','sn','borrower_display','status','scrap','position','cpu','remark','keyin_time')
+    list_display = ('id','platform_with_link','uut_phase','platform_target','platform_group','platform_cycle','sku','sn','borrower_display','status','scrap','position','cpu','remark','purpose_display','keyin_time')
     # list_editable = ('position','cpu','remark')
     list_filter = ('scrap','uutborrowhistory__rent_time','status','platform_phase__phase','platform_phase__platform__group','platform_phase__platform__target','position')
     date_hierarchy ='keyin_time'
@@ -186,6 +186,14 @@ class UutAdmin(admin.ModelAdmin):
             return format_html(template)
         return '-'
     borrower_display.short_description = 'BORROWER'
+
+    def purpose_display(self,obj):
+        history = obj.uutborrowhistory_set.filter(back_time__isnull=True).first()
+        if history: 
+            template = f'{history.purpose}'
+            return format_html(template)
+        return '-'
+    purpose_display.short_description = 'purpose'
 
     def platform_with_link(self,obj):
         if obj.platform_phase.platform:
