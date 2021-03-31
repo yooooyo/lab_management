@@ -1,6 +1,9 @@
+from collections import namedtuple
 from django.contrib import admin
-from .models import Task,TaskStatus,Script,Tool,Ap,ApBorrowHistory,Driver,Module,PowerState,TaskFunction,TaskIssue
+from .models import Task,TaskStatus,Script,Tool,Ap,ApBorrowHistory,Driver,Module,PowerState,TaskFunction,TaskIssue,GeneralQueryString
 from django.utils.html import format_html
+import re
+from django.utils.safestring import SafeString
 # Register your models here.
 @admin.register(TaskStatus)
 class TaskStatusAdmin(admin.ModelAdmin):
@@ -24,15 +27,22 @@ class TaskAdmin(admin.ModelAdmin):
     list_editable.remove('group_series')
     list_editable.remove('script')
     list_editable.remove('uut_uuid')
+    list_editable.remove('uut_info')
+    list_editable.remove('log')
 
+    list_display.remove('log')
     list_display.remove('group_uuid')
+    list_display.remove('uut_info')
     list_display.remove('uut_uuid')
     list_display.remove('assigner')
     list_display.insert(1,'platform_with_link')
     list_display.insert(3,'borrower_to_assigner')
+    list_display.insert(3,'display_modules')
 
     list_filter = ('status','start_time','finish_time','ap')
     search_fields = ('uut__platform_phase__platform__codename','uut__sn','script__name')
+
+    hardwareid_query = GeneralQueryString.objects.get(name='hardwareid').query
 
     def platform_with_link(self,obj):
         if obj.uut:
@@ -45,6 +55,114 @@ class TaskAdmin(admin.ModelAdmin):
     def borrower_to_assigner(self,obj):
         return obj.uut.borrower
     borrower_to_assigner.short_description='ASSIGNER'
+
+    def display_modules(self,obj):
+        modules = self.classify_module_driver(obj)
+        info = self.format_os_cs_bios(obj)
+        template = []
+        if info:
+            template.extend(
+                [f'<b>Model</b><br><span>{info.model}</span>',
+                f'<b>Build ID</b><br><span>{info.buildid}</span>',
+                f'<b>SKU</b><br><span>{info.sku}</span>',
+                f'<b>BIOS</b><br><span>{info.bios}</span>',
+                f'<b>OS</b><br><span>{info.os}</span>',
+                f'<b>ARCH</b><br><span>{info.arch}</span>',
+                f'<b>Error</b><br><span>{info.error}</span><br>',]
+            )
+            for m in modules:
+                template.append(
+                    f'<b>{m.belong}</b><br><span>{m.name}</span><br><small>{m.dri_ver}</small>'
+                )
+            template = '<hr>'.join(template)
+            return format_html(template)
+        else: return None
+    display_modules.short_description = 'INFO'
+    def classify_module_driver(self,obj):
+        class mod_dri:
+            belong=''
+            name=''
+            hardwareid=''
+            dri_ver=''
+
+            def __init__(self,belong=None,name=None,hardwareid=None,dri_ver=None) -> None:
+                self.belong = belong
+                self.name = name
+                self.hardwareid = hardwareid
+                self.dri_ver = dri_ver
+
+        show_modules = []
+        uutinfo = obj.uut_info
+        module_fields = ['lan','wlan','bt','wwan','nfc','rfid']
+        if uutinfo:
+            for module_types in module_fields:
+                modules = uutinfo.get(module_types,None)
+                if modules:
+                    if type(modules) is list:
+                        for module in modules:
+                            hardwareID = module.get('HardWareID',None)
+                            deviceName = module.get('DeviceName',None)
+                            description = module.get('Description',None)
+                            friendlyName = module.get('FriendlyName',None)
+                            driverVersion = module.get('DriverVersion',None)
+                            if hardwareID:
+                                frieldly_name = description or deviceName or friendlyName
+                                re_hardwardID = re.search(self.hardwareid_query,hardwareID)
+                                if re_hardwardID:
+                                    re_hardwardID =  re_hardwardID.groupdict()
+                                    m = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
+                                    frieldly_name = frieldly_name or m.short_name
+                                    show_modules.append(mod_dri(module_types,frieldly_name,hardwareID,driverVersion))
+                    else:
+                        for wwan_submodule,wwan_submodules in modules.items():
+                            if wwan_submodules:
+                                if type(wwan_submodules) is list:
+                                    for module in wwan_submodules:
+                                        hardwareID = module.get('HardWareID',None)
+                                        deviceName = module.get('DeviceName',None)
+                                        description = module.get('Description',None)
+                                        friendlyName = module.get('FriendlyName',None)
+                                        driverVersion = module.get('DriverVersion',None)
+                                        if hardwareID:
+                                            frieldly_name = description or deviceName or friendlyName
+                                            re_hardwardID = re.search(self.hardwareid_query,hardwareID)
+                                            if re_hardwardID:
+                                                re_hardwardID =  re_hardwardID.groupdict()
+                                                m = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
+                                                frieldly_name = frieldly_name or m.short_name
+                                                show_modules.append(mod_dri(wwan_submodule,frieldly_name,hardwareID,driverVersion))
+                                elif type(wwan_submodules) is str:
+                                    show_modules.append(mod_dri(wwan_submodule,wwan_submodules))
+
+        return show_modules
+    def format_os_cs_bios(self,obj):
+        class osinfo:
+            def __init__(self,model=None,buildid=None,sku=None,bios=None,os=None,arch=None) -> None:
+                self.model = model
+                self.buildid = buildid
+                self.sku = sku
+                self.bios = bios
+                self.os = os
+                self.arch = arch
+                self.error = None
+        info = obj.uut_info
+        if info:
+            cs = info.get('cs',None)
+            bios = info.get('bios',None)
+            os = info.get('os',None)
+            try:
+                buildid = None
+                for oemstr in cs[0]['OEMStringArray']:
+                    buildid = re.search('BUILDID#?(?P<buildid>.*);?',oemstr)
+                    if buildid: 
+                        buildid = buildid.groupdict()['buildid'] 
+                        break
+                info = osinfo(cs[0].get('Model',None),buildid,cs[0].get('SystemSKUNumber',None),bios[0].get('Caption',None), \
+                            os[0].get('Version',None),os[0].get('OSArchitecture',None))
+            except Exception as e:
+                info = osinfo()
+                info.error = e
+        return info
 
 @admin.register(Script)
 class ScriptAdmin(admin.ModelAdmin):
@@ -99,3 +217,9 @@ class TaskFunctiondmin(admin.ModelAdmin):
 class TaskIssueAdmin(admin.ModelAdmin):
     list_display = [ field.name for field in TaskIssue._meta.fields]
     list_editable = ['title','description']
+
+@admin.register(GeneralQueryString)
+class GeneralQueryStringAdmin(admin.ModelAdmin):
+    list_display = [ field.name for field in GeneralQueryString._meta.fields]
+    list_editable = list_display.copy()
+    list_editable.remove('id')

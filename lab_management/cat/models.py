@@ -94,13 +94,13 @@ class Driver(models.Model):
 class Module(models.Model):
     id = models.BigAutoField(primary_key=True)
     deliverable_name = models.TextField(blank=True,null=True)
-    short_name = models.CharField(max_length=50)
+    short_name = models.CharField(max_length=50,blank=True,null=True)
     vender_id = models.CharField(max_length=50, blank=True, null=True)
     device_id = models.CharField(max_length=50, blank=True, null=True)
     subsys_device_id = models.CharField(max_length=50, blank=True, null=True)
     subsys_vender_id = models.CharField(max_length=50, blank=True, null=True)
     category = models.CharField(max_length=50, blank=True, null=True)
-    owner = models.ForeignKey('iur.Member', models.DO_NOTHING)
+    owner = models.ForeignKey('iur.Member', models.DO_NOTHING,blank=True,null=True)
 
     class Meta:
         managed = True
@@ -222,5 +222,13 @@ class TaskIssue(models.Model):
     class Meta:
         managed = True
         db_table='task_issue'
+
+class GeneralQueryString(models.Model):
+    name=models.CharField(max_length=200)
+    query = models.TextField()
+    description = models.TextField(null=True,blank=True)
+
+    class Meta:
+        db_table='generalquerystring'
     
 
