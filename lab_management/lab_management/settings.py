@@ -97,7 +97,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': '123',
 
-        'HOST': 'lab',
+        'HOST': 'localhost',
         'PORT': '5432',
     },
     'lab':{
@@ -146,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'ROC'
 
 USE_I18N = True
 

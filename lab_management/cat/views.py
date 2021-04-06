@@ -130,7 +130,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         script = data.get('script',None)
         if script:
-            script = Script.objects.get(name__iexact=script).id if script else script
+            script = Script.objects.get(name__iexact=script) if script else script
             data.update({'script':script.id})
         ssid = request.data.get('ssid',None)
         ap = Ap.find_by_ssid(ssid)

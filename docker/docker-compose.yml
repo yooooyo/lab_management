@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database:/var/lib/postgresql/backup
+    image: commgitforhp/labpostgres:latest
+

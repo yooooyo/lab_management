@@ -218,7 +218,8 @@ class TaskIssue(models.Model):
     device_driver = JSONField(null=True,blank=True)
     function = JSONField(null=True,blank=True)
     description = TextField(null=True,blank=True)
-
+    add_time=models.DateTimeField(auto_now_add=True)
+    
     class Meta:
         managed = True
         db_table='task_issue'
