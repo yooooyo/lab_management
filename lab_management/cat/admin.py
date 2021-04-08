@@ -1,4 +1,5 @@
 from collections import namedtuple
+import json
 from django.contrib import admin
 from .models import Task,TaskStatus,Script,Tool,Ap,ApBorrowHistory,Driver,Module,PowerState,TaskFunction,TaskIssue,GeneralQueryString
 from django.utils.html import format_html
@@ -29,15 +30,20 @@ class TaskAdmin(admin.ModelAdmin):
     list_editable.remove('uut_uuid')
     list_editable.remove('uut_info')
     list_editable.remove('log')
+    list_editable.remove('power_cycle_info')    
+
 
     list_display.remove('log')
     list_display.remove('group_uuid')
     list_display.remove('uut_info')
     list_display.remove('uut_uuid')
     list_display.remove('assigner')
+    list_display.remove('power_cycle_info')
     list_display.insert(1,'platform_with_link')
     list_display.insert(3,'borrower_to_assigner')
     list_display.insert(3,'display_modules')
+    list_display.insert(5,'display_cycles')
+    list_display.insert(5,'display_issues')
 
     list_filter = ('status','start_time','finish_time','ap')
     search_fields = ('uut__platform_phase__platform__codename','uut__sn','script__name')
@@ -55,6 +61,17 @@ class TaskAdmin(admin.ModelAdmin):
     def borrower_to_assigner(self,obj):
         return obj.uut.borrower
     borrower_to_assigner.short_description='ASSIGNER'
+
+    def display_cycles(self,obj):
+        if obj.power_cycle_info:
+            template=[]
+            for state,cycle in obj.power_cycle_info.items():
+                template.append(
+                    f'<b>{state}</b> <span>{cycle}</span><br>'
+                )
+            return format_html('<hr>'.join(template))
+        return None
+    display_cycles.short_description = 'CYCLES'
 
     def display_modules(self,obj):
         modules = self.classify_module_driver(obj)
@@ -78,6 +95,20 @@ class TaskAdmin(admin.ModelAdmin):
             return format_html(template)
         else: return None
     display_modules.short_description = 'INFO'
+
+    def display_issues(self,obj):
+        template =[]
+        issues = obj.taskissue_set.all()
+        if len(issues):
+            for issue in issues:
+                template.append(
+                    f'<a href="/cat/taskissue/{issue.id}/change/">{issue.title}</a>'
+                )
+            template = 'br'.join(template)
+            return format_html(template)
+        return '-'
+    display_issues.short_description = 'ISSUES'
+
     def classify_module_driver(self,obj):
         class mod_dri:
             belong=''
@@ -163,6 +194,8 @@ class TaskAdmin(admin.ModelAdmin):
                 info = osinfo()
                 info.error = e
         return info
+
+
 
 @admin.register(Script)
 class ScriptAdmin(admin.ModelAdmin):
