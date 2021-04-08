@@ -4,6 +4,7 @@ from django.contrib.postgres.fields import JSONField
 from django.contrib.auth.models import User
 from django.db.models import Q 
 import uuid
+import datetime
 
 from django.db.models.fields import BigIntegerField, TextField, URLField
 
@@ -136,7 +137,7 @@ class Script(models.Model):
     nfc = models.BooleanField(default=False)
     path = models.FileField(upload_to='uploads/scripts/',null=True,blank=True)
     script_url  = URLField(null=True,blank=True,db_column='url')
-    add_time = models.DateTimeField(auto_now_add=True)
+    add_time = models.DateTimeField(default=datetime.datetime.now())
 
     class Meta:
         managed = True
@@ -177,7 +178,7 @@ class Task(models.Model):
     power_cycle_info = JSONField(blank=True,null=True)
     start_time = models.DateTimeField(blank=True,null=True)
     finish_time = models.DateTimeField(blank = True,null=True)
-    add_time=models.DateTimeField(auto_now_add=True)
+    add_time=models.DateTimeField(default=datetime.datetime.now())
     log = URLField(blank=True,null=True)
 
     class Meta:
@@ -218,7 +219,7 @@ class TaskIssue(models.Model):
     device_driver = JSONField(null=True,blank=True)
     function = JSONField(null=True,blank=True)
     description = TextField(null=True,blank=True)
-    add_time=models.DateTimeField(auto_now_add=True)
+    add_time=models.DateTimeField(blank=True,null=True,default=datetime.datetime.now())
     
     class Meta:
         managed = True
