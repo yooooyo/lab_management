@@ -217,7 +217,7 @@ class UutAdmin(admin.ModelAdmin):
 
     def mark_unscrap(self,request,queryset):
         if request.user.is_superuser:
-            be_updated = queryset.update(scrap = False,status=UutStatus.KEEPON)
+            be_updated = queryset.update(scrap = False,status=UutStatus.KEEPON())
             self.message_user(request,ngettext(f'{be_updated} item was mark unscrap',f'{be_updated} items were mark unscrap',be_updated),messages.SUCCESS)
     mark_unscrap.short_description = 'UnScrap'
 
