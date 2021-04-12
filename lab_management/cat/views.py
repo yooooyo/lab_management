@@ -46,7 +46,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def format_post_request(self,request:Request):
         data ={}
         uut = request.data.get('sn',None)
-        uut = Uut.objects.get(sn__iexact=uut) if uut else uut
+        uut = Uut.objects.get(sn__icontains=uut) if uut else uut
         uut_uuid = request.data.get('uut_uuid',None)
         uut_uuid = str(uuid.uuid4()) if not uut and not uut_uuid else uut_uuid
 
