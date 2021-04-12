@@ -24,7 +24,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.request.query_params.get('task',None)
         if task and sn:
             if task == 'current':
-                queryset = queryset.filter(Q(uut__sn__iexact=sn) & Q(status__status_text__iexact='run'))
+                queryset = queryset.filter(Q(uut__sn__icontain=sn) & Q(status__status_text__iexact='run'))
             elif task == 'previous':
                 queryset = queryset.filter(uut_uuid=uut_uuid) # not yet
             elif task == 'next':
@@ -35,7 +35,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         if task_id:
             queryset = queryset.filter(id=task_id)
         if sn:
-            queryset = queryset.filter(uut__sn__iexact=sn)
+            queryset = queryset.filter(uut__sn__icontain=sn)
         if uut_uuid:
             queryset = queryset.filter(uut_uuid=uut_uuid)
         return queryset
@@ -210,10 +210,18 @@ class TaskStatusViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(status_text__iexact=status)
         return queryset
 
+class PowerStateViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PowerState.objects.all()
+    serializer_class = PowerStateSerializer
+    permission_class = [permissions.IsAuthenticated,permissions.AllowAny]
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
 class TaskIssueViewSet(viewsets.ModelViewSet):
     queryset = TaskIssue.objects.all()
     serializer_class = TaskIssueSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,permissions.AllowAny]
 
     def perform_create(self, serializer):
         return super().perform_create(serializer)
@@ -241,6 +249,13 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
             }
         )
         return data
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        sn = self.request.query_params.get('sn',None)
+        if sn:
+            queryset = queryset.filter(task__uut__sn=sn)
+        return queryset
 
     def create(self, request, *args, **kwargs):
         data = self.format_post_request(request)
