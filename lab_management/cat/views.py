@@ -24,7 +24,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.request.query_params.get('task',None)
         if task and sn:
             if task == 'current':
-                queryset = queryset.filter(Q(uut__sn__icontain=sn) & Q(status__status_text__iexact='run'))
+                queryset = queryset.filter(Q(uut__sn__icontains=sn) & Q(status__status_text__iexact='run'))
             elif task == 'previous':
                 queryset = queryset.filter(uut_uuid=uut_uuid) # not yet
             elif task == 'next':
@@ -35,7 +35,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         if task_id:
             queryset = queryset.filter(id=task_id)
         if sn:
-            queryset = queryset.filter(uut__sn__icontain=sn)
+            queryset = queryset.filter(uut__sn__icontains=sn)
         if uut_uuid:
             queryset = queryset.filter(uut_uuid=uut_uuid)
         return queryset
