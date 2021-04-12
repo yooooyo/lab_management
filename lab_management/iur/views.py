@@ -36,7 +36,7 @@ class UutViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = Uut.objects.all()
         sn = self.request.query_params.get('sn', None)
         if sn :
-            queryset = queryset.filter(sn=sn)
+            queryset = queryset.filter(sn__icontains=sn)
         return queryset
 
 
