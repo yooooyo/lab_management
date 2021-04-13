@@ -141,8 +141,8 @@ class TaskAdmin(admin.ModelAdmin):
                                 re_hardwardID = re.search(self.hardwareid_query,hardwareID)
                                 if re_hardwardID:
                                     re_hardwardID =  re_hardwardID.groupdict()
-                                    m = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
-                                    frieldly_name = frieldly_name or m.short_name
+                                    m,created = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
+                                    frieldly_name = m.short_name or frieldly_name 
                                     show_modules.append(mod_dri(module_types,frieldly_name,hardwareID,driverVersion))
                     else:
                         for wwan_submodule,wwan_submodules in modules.items():
@@ -159,8 +159,8 @@ class TaskAdmin(admin.ModelAdmin):
                                             re_hardwardID = re.search(self.hardwareid_query,hardwareID)
                                             if re_hardwardID:
                                                 re_hardwardID =  re_hardwardID.groupdict()
-                                                m = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
-                                                frieldly_name = frieldly_name or m.short_name
+                                                m,created = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
+                                                frieldly_name = m.short_name or frieldly_name
                                                 show_modules.append(mod_dri(wwan_submodule,frieldly_name,hardwareID,driverVersion))
                                 elif type(wwan_submodules) is str:
                                     show_modules.append(mod_dri(wwan_submodule,wwan_submodules))
