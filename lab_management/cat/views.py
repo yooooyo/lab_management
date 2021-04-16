@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import serializers, viewsets,permissions
 from iur.serializers import Uut,UutSerializer,Member,MemberSerializer
-from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus,PowerState,PowerStateSerializer
+from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus,PowerState,PowerStateSerializer,GeneralQueryString,GeneralQueryStringSerializer
 from django.db.models import Q, query 
 from rest_framework import status
 import uuid
@@ -213,6 +213,14 @@ class TaskStatusViewSet(viewsets.ReadOnlyModelViewSet):
 class PowerStateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PowerState.objects.all()
     serializer_class = PowerStateSerializer
+    permission_class = [permissions.IsAuthenticated,permissions.AllowAny]
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+class GeneralQueryStringViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = GeneralQueryString.objects.all()
+    serializer_class =GeneralQueryStringSerializer
     permission_class = [permissions.IsAuthenticated,permissions.AllowAny]
 
     def retrieve(self, request, *args, **kwargs):

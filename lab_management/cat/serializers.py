@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DriverCategory, Task,Script,TaskStatus,Ap,Tool,Module,PowerState,TaskFunction,TaskIssue,Driver,DriverCategory
+from .models import DriverCategory, Task,Script,TaskStatus,Ap,Tool,Module,PowerState,TaskFunction,TaskIssue,Driver,DriverCategory,GeneralQueryString
 from iur.serializers import MemberSerializer, UutSerializer
 
 
@@ -48,6 +48,11 @@ class PowerStateSerializer(serializers.ModelSerializer):
 class TaskFunctionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskFunction
+        fields='__all__'
+
+class GeneralQueryStringSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GeneralQueryString
         fields='__all__'
 
 class TaskIssueSerializer(serializers.ModelSerializer):

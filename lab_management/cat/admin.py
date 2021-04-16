@@ -196,7 +196,6 @@ class TaskAdmin(admin.ModelAdmin):
         return info
 
 
-
 @admin.register(Script)
 class ScriptAdmin(admin.ModelAdmin):
     list_display = [ field.name for field in Script._meta.fields]
