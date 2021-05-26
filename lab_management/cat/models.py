@@ -212,7 +212,7 @@ class TaskFunction(models.Model):
         db_table='task_function'
 
 class TaskIssue(models.Model):
-    title = models.CharField(max_length=50,null=True,blank=True)
+    title = models.CharField(max_length=200,null=True,blank=True)
     level = models.CharField(max_length=50,null=True,blank=True)
     task=models.ForeignKey(Task,on_delete=models.CASCADE)
     power_state = models.ForeignKey(PowerState,null=True,blank=True,on_delete=models.CASCADE)

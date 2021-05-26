@@ -11,6 +11,24 @@ class TaskStatusAdmin(admin.ModelAdmin):
     list_display = [ field.name for field in TaskStatus._meta.fields]
     list_editable = list_display.copy()
     list_editable.remove('id')
+@admin.register(TaskIssue)
+class TaskIssueAdmin(admin.ModelAdmin):
+    list_display = [ field.name for field in TaskIssue._meta.fields]
+    list_editable = ['title','description']
+    list_filter = ['title','level']
+    search_fields = ['task__uut__sn']
+    
+class TaskIssueInline(admin.TabularInline):
+    model = TaskIssue
+    extra = 2
+    fieldsets = (
+        (None, {
+            "fields": (
+                'title','level','power_state','device_driver','description','add_time'
+            ),
+            
+        }),
+    )
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
@@ -47,6 +65,7 @@ class TaskAdmin(admin.ModelAdmin):
 
     list_filter = ('status','start_time','finish_time','ap')
     search_fields = ('uut__platform_phase__platform__codename','uut__sn','script__name')
+    inlines=[TaskIssueInline]
 
     hardwareid_query = GeneralQueryString.objects.get(name='hardwareid').query
 
@@ -245,10 +264,7 @@ class TaskFunctiondmin(admin.ModelAdmin):
     list_editable = list_display.copy()
     list_editable.remove('id')
 
-@admin.register(TaskIssue)
-class TaskIssueAdmin(admin.ModelAdmin):
-    list_display = [ field.name for field in TaskIssue._meta.fields]
-    list_editable = ['title','description']
+
 
 @admin.register(GeneralQueryString)
 class GeneralQueryStringAdmin(admin.ModelAdmin):
