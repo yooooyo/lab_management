@@ -49,8 +49,10 @@ class Ap(models.Model):
     
     @classmethod
     def find_by_ssid(self,ssid):
-        return self.objects.filter(Q(ssid_2d4__iexact=ssid)|Q(ssid_5__iexact=ssid))
-    
+        if ssid:
+            return self.objects.filter(Q(ssid_2d4__iexact=ssid)|Q(ssid_5__iexact=ssid))
+        return None
+        
     @classmethod
     def find_or_create_by_ssid(self,ssid):
         return self.objects.get_or_create(ssid_2d4=ssid)

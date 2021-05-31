@@ -123,7 +123,7 @@ class TaskAdmin(admin.ModelAdmin):
                 template.append(
                     f'<a href="/cat/taskissue/{issue.id}/change/">{issue.title}</a>'
                 )
-            template = 'br'.join(template)
+            template = '<br>'.join(template)
             return format_html(template)
         return '-'
     display_issues.short_description = 'ISSUES'

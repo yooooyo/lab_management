@@ -134,7 +134,8 @@ class TaskViewSet(viewsets.ModelViewSet):
             data.update({'script':script.id})
         ssid = request.data.get('ssid',None)
         ap = Ap.find_by_ssid(ssid)
-        if ap:
+        if ap and hasattr(ap,'count'):
+            ap=ap.first()
             data.update({'ap':ap.id})
         task_status = request.data.get('status',None)
         if task_status:
