@@ -11,8 +11,8 @@ from django.db.models.fields import BigIntegerField, TextField, URLField
 # Create your models here.
 class Ap(models.Model):
     id = models.BigAutoField(primary_key=True)
-    no = models.CharField(max_length=100)
-    name = models.CharField(max_length=50)
+    no = models.CharField(max_length=100,blank=True,null=True)
+    name = models.CharField(max_length=50,blank=True,default='Unknown')
     vender = models.CharField(max_length=50, blank=True, null=True)
     adapter = models.CharField(max_length=50, blank=True, null=True)
     storage = models.CharField(max_length=50, blank=True, null=True)
@@ -43,13 +43,18 @@ class Ap(models.Model):
     class Meta:
         managed = True
         db_table = 'ap'
+
     def __str__(self) -> str:
-        return self.name
+        return self.ssid_2d4 or self.ssid_5 
     
     @classmethod
     def find_by_ssid(self,ssid):
         return self.objects.filter(Q(ssid_2d4__iexact=ssid)|Q(ssid_5__iexact=ssid))
     
+    @classmethod
+    def find_or_create_by_ssid(self,ssid):
+        return self.objects.get_or_create(ssid_2d4=ssid)
+
     @classmethod
     def get_default_ap(self):
         return self.objects.get(is_default=True)
@@ -179,6 +184,7 @@ class Task(models.Model):
     start_time = models.DateTimeField(blank=True,null=True)
     finish_time = models.DateTimeField(blank = True,null=True)
     add_time=models.DateTimeField(default=datetime.datetime.now())
+    ssid = models.TextField(blank=True,null=True)
     log = URLField(blank=True,null=True)
 
     class Meta:

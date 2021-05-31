@@ -16,7 +16,7 @@ class TaskIssueAdmin(admin.ModelAdmin):
     list_display = [ field.name for field in TaskIssue._meta.fields]
     list_editable = ['title','description']
     list_filter = ['title','level']
-    search_fields = ['task__uut__sn']
+    search_fields = ['task__uut__sn','title']
     
 class TaskIssueInline(admin.TabularInline):
     model = TaskIssue

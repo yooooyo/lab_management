@@ -59,7 +59,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         ap = request.data.get('ssid',None)
         if ap:
-            ap =  Ap.find_by_ssid(ap)
+            ap =  Ap.find_or_create_by_ssid(ap)[0]
         else:
             ap = Ap.objects.get(is_default=True)
 
