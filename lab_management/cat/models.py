@@ -134,7 +134,7 @@ class Script(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.TextField(unique=True)
     version = models.CharField(max_length=50, blank=True, null=True)
-    tool = models.ForeignKey(Tool, models.DO_NOTHING, blank=True, null=True)
+    tool = models.ManyToManyField(Tool)
     functions=ArrayField(base_field=models.BigIntegerField(),null=True,blank=True)
     wwan = models.BooleanField(default=False)
     wlan = models.BooleanField(default=False)

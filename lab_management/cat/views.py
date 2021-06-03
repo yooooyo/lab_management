@@ -5,10 +5,13 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import serializers, viewsets,permissions
 from iur.serializers import Uut,UutSerializer,Member,MemberSerializer
-from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus,PowerState,PowerStateSerializer,GeneralQueryString,GeneralQueryStringSerializer
+from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,\
+        Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus,PowerState,\
+        PowerStateSerializer,GeneralQueryString,GeneralQueryStringSerializer,Tool,ToolSerializer
 from django.db.models import Q, query 
 from rest_framework import status
 import uuid
+
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()

@@ -15,7 +15,7 @@ class ApSerializer(serializers.ModelSerializer):
 class ToolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tool
-        fields='__all__'
+        fields=['id','name','version',]
 
 class ScriptSerializer(serializers.ModelSerializer):
     tool = ToolSerializer()
