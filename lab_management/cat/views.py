@@ -11,6 +11,7 @@ from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,Scri
 from django.db.models import Q, query 
 from rest_framework import status
 import uuid
+import json
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -53,12 +54,20 @@ class TaskViewSet(viewsets.ModelViewSet):
         uut_uuid = request.data.get('uut_uuid',None)
         uut_uuid = str(uuid.uuid4()) if not uut and not uut_uuid else uut_uuid
 
+
+            
         if uut:data.update({'uut':uut.id}) 
         else: data.update({'uut_uuid':uut_uuid})
 
         uut_info = request.data.get('uut_info',None)
         script = request.data.get('script',None)
         script = Script.objects.get(name__iexact=script)
+
+        tool = request.data.get('tool',None)
+        if tool:
+            tool = json.loads(tool)
+            for tool_name,tool_ver in tool.items():
+                tool,ret = Tool.objects.get_or_create(name=tool_name,version=tool_ver)
 
         ap = request.data.get('ssid',None)
         if ap:
@@ -105,6 +114,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             'script':script.id,
             'status':task_status.id,
             'ap':ap.id,
+            'tool':getattr(tool,'id',None),
             'uut_info':uut_info,
             'group_uuid':group_uuid,
             'group_series':group_series,
@@ -146,6 +156,13 @@ class TaskViewSet(viewsets.ModelViewSet):
             data.update({'status':task_status.id})
         group_uuid = data.get('group_uuid',None)
         group_name = data.get('group_name',None)
+
+        tool = data.get('tool',None)
+        if tool:
+            tool = json.loads(tool)
+            for tool_name,tool_ver in tool.items():
+                tool_obj,ret = Tool.objects.get_or_create(name=tool_name,version=tool_ver)
+            data.update({'tool':tool_obj.id})
 
         tasks = None
         if group_uuid:

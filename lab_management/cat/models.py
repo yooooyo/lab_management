@@ -52,7 +52,7 @@ class Ap(models.Model):
         if ssid:
             return self.objects.filter(Q(ssid_2d4__iexact=ssid)|Q(ssid_5__iexact=ssid))
         return None
-        
+
     @classmethod
     def find_or_create_by_ssid(self,ssid):
         return self.objects.get_or_create(ssid_2d4=ssid)
@@ -121,14 +121,15 @@ class Tool(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
     version = models.CharField(max_length=50, blank=True, null=True)
-    tool_url = URLField(null=False,blank=False,db_column='url')
+    tool_url = URLField(null=True,blank=True,db_column='url')
 
     class Meta:
         managed = True
         db_table = 'tool'
 
-    def __str__(self) -> str:
-        return self.name
+    def __str__(self):
+       return self.name +':'+ self.version
+        
 
 class Script(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -185,8 +186,9 @@ class Task(models.Model):
     power_cycle_info = JSONField(blank=True,null=True)
     start_time = models.DateTimeField(blank=True,null=True)
     finish_time = models.DateTimeField(blank = True,null=True)
-    add_time=models.DateTimeField(default=datetime.datetime.now())
-    ssid = models.TextField(blank=True,null=True)
+    add_time=models.DateTimeField(auto_now_add=True)
+    tool = models.ForeignKey(Tool,on_delete=models.CASCADE,null=True,blank=True)
+    # ssid = models.TextField(blank=True,null=True)
     log = URLField(blank=True,null=True)
 
     class Meta:

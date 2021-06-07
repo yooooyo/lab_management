@@ -64,7 +64,7 @@ class TaskAdmin(admin.ModelAdmin):
     list_display.insert(5,'display_issues')
 
     list_filter = ('status','start_time','finish_time','ap')
-    search_fields = ('uut__platform_phase__platform__codename','uut__sn','script__name')
+    search_fields = ('uut__platform_phase__platform__codename','uut__sn','script__name','group_name')
     inlines=[TaskIssueInline]
 
     hardwareid_query = GeneralQueryString.objects.get(name='hardwareid').query
