@@ -85,9 +85,15 @@ class TaskAdmin(admin.ModelAdmin):
         if obj.power_cycle_info:
             template=[]
             for state,cycle in obj.power_cycle_info.items():
-                template.append(
-                    f'<b>{state}</b> <span>{cycle}</span><br>'
-                )
+                if type(cycle) is dict:
+                    for random_state,random_round_minutes in cycle.items():
+                        template.append(
+                            f'<b>{random_state}</b> <span>{random_round_minutes[0]} - {random_round_minutes[1]}</span><br>'
+                        )
+                else:
+                    template.append(
+                        f'<b>{state}</b> <span>{cycle}</span><br>'
+                    )
             return format_html('<hr>'.join(template))
         return None
     display_cycles.short_description = 'CYCLES'
