@@ -78,7 +78,7 @@ class TaskAdmin(admin.ModelAdmin):
     platform_with_link.short_description='PLATFORM'
 
     def borrower_to_assigner(self,obj):
-        return obj.uut.borrower
+        return getattr(obj.uut,'borrower',None) 
     borrower_to_assigner.short_description='ASSIGNER'
 
     def display_cycles(self,obj):
