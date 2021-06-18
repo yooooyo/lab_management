@@ -183,7 +183,7 @@ class Task(models.Model):
     ap = models.ForeignKey(Ap,on_delete=models.CASCADE,blank = True,null=True)
     assigner = models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
     uut_info = JSONField(blank=True,null=True)
-    power_cycle_info = JSONField(blank=True,null=True)
+    power_cycle_info = JSONField(default={})
     start_time = models.DateTimeField(blank=True,null=True)
     finish_time = models.DateTimeField(blank = True,null=True)
     add_time=models.DateTimeField(auto_now_add=True)
