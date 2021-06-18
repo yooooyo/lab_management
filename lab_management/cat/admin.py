@@ -83,18 +83,23 @@ class TaskAdmin(admin.ModelAdmin):
 
     def display_cycles(self,obj):
         if obj.power_cycle_info:
-            template=[]
-            for state,cycle in obj.power_cycle_info.items():
-                if type(cycle) is dict:
-                    for random_state,random_round_minutes in cycle.items():
+            try:
+                template=[]
+                for state,cycle in obj.power_cycle_info.items():
+                    if type(cycle) is dict:
+                        for random_state,random_info in cycle.items(): #s0
+                            count = random_info['count']
+                            unit = random_info['unit']
+                            template.append(
+                                f'<b>{random_state}</b> <span>{count} {unit}</span><br>'
+                            )
+                    else:
                         template.append(
-                            f'<b>{random_state}</b> <span>{random_round_minutes[0]} - {random_round_minutes[1]}</span><br>'
+                            f'<b>{state}</b> <span>{cycle}</span><br>'
                         )
-                else:
-                    template.append(
-                        f'<b>{state}</b> <span>{cycle}</span><br>'
-                    )
-            return format_html('<hr>'.join(template))
+                return format_html('<hr>'.join(template))
+            except:
+                return obj.power_cycle_info
         return None
     display_cycles.short_description = 'CYCLES'
 
