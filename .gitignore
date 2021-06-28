@@ -11,3 +11,4 @@ credentials.json
 static
 docker/database
 lab_management/classify.py
+*.sock

@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'iur',
     'rest_framework',
     'cat',
-    'oldiur',
+    # 'oldiur',
 
 ]
 
@@ -97,7 +97,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': '123',
 
-        'HOST': 'localhost',
+        'HOST': 'db',
         'PORT': '5432',
     },
     'lab':{
@@ -108,17 +108,17 @@ DATABASES = {
         'HOST': 'lab',
         'PORT': '5432',
     },
-    'old':{
-        'ENGINE': 'sql_server.pyodbc',
-        'NAME':'test',
-        'HOST':'DESKTOP-8FD1NOD\SQLEXPRESS',
-        'PORT':'49172',
-        'USER':'test3',
-        'PASSWORD':'P@ssw0rd',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-        },
-    }
+    # 'old':{
+    #     'ENGINE': 'sql_server.pyodbc',
+    #     'NAME':'test',
+    #     'HOST':'DESKTOP-8FD1NOD\SQLEXPRESS',
+    #     'PORT':'49172',
+    #     'USER':'test3',
+    #     'PASSWORD':'P@ssw0rd',
+    #     'OPTIONS': {
+    #         'driver': 'ODBC Driver 17 for SQL Server',
+    #     },
+    # }
 }
 
 
