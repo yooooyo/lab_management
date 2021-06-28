@@ -12,6 +12,7 @@ from django.db.models import Q, query
 from rest_framework import status
 import uuid
 import json
+from datetime import timedelta
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -263,7 +264,17 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
         power_state = request.data.get('power_state',None)
         device_driver = request.data.get('device_driver',None)
         function = request.data.get('function',None)
+        recover_time = request.data.get('recover_time',None)
+        occur_time = request.data.get('occur_time',None)
         description = request.data.get('description',None)
+        if recover_time:
+            # recover_time shound be dict and has keys one of days,seconds,microseconds,milliseconds,minutes,hours,weeks 
+            recover_time = json.loads(recover_time)
+            recover_time = timedelta(**recover_time)
+        if occur_time:
+            # occur_time shound be dict and has keys one of days,seconds,microseconds,milliseconds,minutes,hours,weeks 
+            occur_time = json.loads(occur_time)
+            occur_time = timedelta(**occur_time)
         if power_state:
             power_state = PowerState.objects.get(name__iexact=power_state).id
         data.update(
@@ -274,6 +285,8 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
                 'power_state':power_state,
                 'device_driver':device_driver,
                 'function':function,
+                'recover_time':recover_time,
+                'occur_time':occur_time,
                 'description':description,
             }
         )

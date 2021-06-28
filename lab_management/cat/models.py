@@ -6,7 +6,7 @@ from django.db.models import Q
 import uuid
 import datetime
 
-from django.db.models.fields import BigIntegerField, TextField, URLField
+from django.db.models.fields import BigIntegerField, DateTimeField, DurationField, TextField, URLField
 
 # Create your models here.
 class Ap(models.Model):
@@ -229,6 +229,8 @@ class TaskIssue(models.Model):
     device_driver = JSONField(null=True,blank=True)
     function = JSONField(null=True,blank=True)
     description = TextField(null=True,blank=True)
+    recover_time = DurationField(null=True,blank=True)
+    occur_time = DurationField(null=True,blank=True)
     add_time=models.DateTimeField(blank=True,null=True,default=datetime.datetime.now())
     
     class Meta:
