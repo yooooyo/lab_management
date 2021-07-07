@@ -183,25 +183,40 @@ class Uut(models.Model):
     
 
     def platform_name(self):
-        return self.platform_phase.platform.codename
+        try:
+            return self.platform_phase.platform.codename
+        except:
+            return '-'
     platform_name.short_description = 'platform'
     platform_name.admin_order_field = 'platform__codename'
 
     def platform_group(self):
-        return self.platform_phase.platform.group
+        try:
+            return self.platform_phase.platform.group
+        except:
+            return '-'
     platform_group.short_description = 'group'
 
     def platform_target(self):
-        return self.platform_phase.platform.target
+        try:
+            return self.platform_phase.platform.target
+        except:
+            return '-'
     platform_target.short_description = 'target'
 
     def platform_cycle(self):
-        return self.platform_phase.platform.cycle
+        try:
+            return self.platform_phase.platform.cycle
+        except:
+            return '-'
     platform_cycle.short_description = 'cycle'
     platform_cycle.admin_order_field = 'platform__cycle'
 
     def uut_phase(self):
-        return self.platform_phase.phase.phase_text
+        try:
+            return self.platform_phase.phase.phase_text
+        except:
+            return '-'
     uut_phase.short_description = 'phase'
 
 

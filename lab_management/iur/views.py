@@ -51,6 +51,7 @@ class UutViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+
 class PlatformConfigViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PlatformConfig.objects.all()
     serializer_class = PlatformConfigSerializer

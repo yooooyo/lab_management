@@ -196,10 +196,10 @@ class UutAdmin(admin.ModelAdmin):
     purpose_display.short_description = 'purpose'
 
     def platform_with_link(self,obj):
-        if obj.platform_phase.platform:
+        try:
             template = f'<b><a href="/iur/platform/{obj.platform_phase.platform.id}/change/">{obj.platform_phase.platform.codename}</a></b>'
             return format_html(template)
-        else:
+        except:
             return '-'
     platform_with_link.short_description='PLATFORM'
     platform_with_link.admin_order_field='platform_phase__platform'
