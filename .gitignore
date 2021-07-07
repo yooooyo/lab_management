@@ -10,4 +10,5 @@ lab_management_azure_active_directory_token.txt
 credentials.json
 static
 docker/database
+lab_management/classify.py
 *.sock

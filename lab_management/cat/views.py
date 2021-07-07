@@ -5,15 +5,28 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import serializers, viewsets,permissions
 from iur.serializers import Uut,UutSerializer,Member,MemberSerializer
-from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus,PowerState,PowerStateSerializer
+from .serializers import TaskIssueSerializer,TaskIssue, TaskSerializer,Task,ScriptSerializer,\
+        Script,ApSerializer,Ap,TaskStatusSerializer,TaskStatus,PowerState,\
+        PowerStateSerializer,GeneralQueryString,GeneralQueryStringSerializer,Tool,ToolSerializer
 from django.db.models import Q, query 
 from rest_framework import status
 import uuid
+import json
+from datetime import timedelta
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 
-class TaskViewSet(viewsets.ModelViewSet):
+class ModelSearchFilterViewSet(viewsets.ModelViewSet):
+    filter_backends = [DjangoFilterBackend,SearchFilter]
+    pass
+
+class TaskViewSet(ModelSearchFilterViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_class = [permissions.IsAuthenticated,permissions.AllowAny]
+    
+    filterset_fields = ('group_name','script__name','uut__sn')
+    search_fields=('group_name','script__name','uut_info','start_time','finish_time','tool__name')
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -46,10 +59,12 @@ class TaskViewSet(viewsets.ModelViewSet):
     def format_post_request(self,request:Request):
         data ={}
         uut = request.data.get('sn',None)
-        uut = Uut.objects.get(sn__iexact=uut) if uut else uut
+        uut = Uut.objects.get(sn__icontains=uut) if uut else uut
         uut_uuid = request.data.get('uut_uuid',None)
         uut_uuid = str(uuid.uuid4()) if not uut and not uut_uuid else uut_uuid
 
+
+            
         if uut:data.update({'uut':uut.id}) 
         else: data.update({'uut_uuid':uut_uuid})
 
@@ -57,9 +72,15 @@ class TaskViewSet(viewsets.ModelViewSet):
         script = request.data.get('script',None)
         script = Script.objects.get(name__iexact=script)
 
+        tool = request.data.get('tool',None)
+        if tool:
+            tool = json.loads(tool)
+            for tool_name,tool_ver in tool.items():
+                tool,ret = Tool.objects.get_or_create(name=tool_name,version=tool_ver)
+
         ap = request.data.get('ssid',None)
         if ap:
-            ap =  Ap.find_by_ssid(ap)
+            ap =  Ap.find_or_create_by_ssid(ap)[0]
         else:
             ap = Ap.objects.get(is_default=True)
 
@@ -102,6 +123,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             'script':script.id,
             'status':task_status.id,
             'ap':ap.id,
+            'tool':getattr(tool,'id',None),
             'uut_info':uut_info,
             'group_uuid':group_uuid,
             'group_series':group_series,
@@ -134,7 +156,8 @@ class TaskViewSet(viewsets.ModelViewSet):
             data.update({'script':script.id})
         ssid = request.data.get('ssid',None)
         ap = Ap.find_by_ssid(ssid)
-        if ap:
+        if ap and hasattr(ap,'count'):
+            ap=ap.first()
             data.update({'ap':ap.id})
         task_status = request.data.get('status',None)
         if task_status:
@@ -142,6 +165,13 @@ class TaskViewSet(viewsets.ModelViewSet):
             data.update({'status':task_status.id})
         group_uuid = data.get('group_uuid',None)
         group_name = data.get('group_name',None)
+
+        tool = data.get('tool',None)
+        if tool:
+            tool = json.loads(tool)
+            for tool_name,tool_ver in tool.items():
+                tool_obj,ret = Tool.objects.get_or_create(name=tool_name,version=tool_ver)
+            data.update({'tool':tool_obj.id})
 
         tasks = None
         if group_uuid:
@@ -218,10 +248,24 @@ class PowerStateViewSet(viewsets.ReadOnlyModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-class TaskIssueViewSet(viewsets.ModelViewSet):
+class GeneralQueryStringViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = GeneralQueryString.objects.all()
+    serializer_class =GeneralQueryStringSerializer
+    permission_class = [permissions.IsAuthenticated,permissions.AllowAny]
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+
+
+class TaskIssueViewSet(ModelSearchFilterViewSet):
     queryset = TaskIssue.objects.all()
     serializer_class = TaskIssueSerializer
-    permission_classes = [permissions.IsAuthenticated,permissions.AllowAny]
+    permission_classes = [permissions.AllowAny]
+
+    # filter_backends = [DjangoFilterBackend,SearchFilter]
+    filterset_fields = ('title','level')
+    search_fields=('title','level','device_driver')
 
     def perform_create(self, serializer):
         return super().perform_create(serializer)
@@ -234,7 +278,17 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
         power_state = request.data.get('power_state',None)
         device_driver = request.data.get('device_driver',None)
         function = request.data.get('function',None)
+        recover_time = request.data.get('recover_time',None)
+        occur_time = request.data.get('occur_time',None)
         description = request.data.get('description',None)
+        if recover_time:
+            # recover_time shound be dict and has keys one of days,seconds,microseconds,milliseconds,minutes,hours,weeks 
+            recover_time = json.loads(recover_time)
+            recover_time = timedelta(**recover_time)
+        if occur_time:
+            # occur_time shound be dict and has keys one of days,seconds,microseconds,milliseconds,minutes,hours,weeks 
+            occur_time = json.loads(occur_time)
+            occur_time = timedelta(**occur_time)
         if power_state:
             power_state = PowerState.objects.get(name__iexact=power_state).id
         data.update(
@@ -245,6 +299,8 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
                 'power_state':power_state,
                 'device_driver':device_driver,
                 'function':function,
+                'recover_time':recover_time,
+                'occur_time':occur_time,
                 'description':description,
             }
         )
@@ -286,6 +342,21 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
             instance._prefetched_objects_cache = {}
 
         return Response(serializer.data)
+    
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+    
+    
 
 
 

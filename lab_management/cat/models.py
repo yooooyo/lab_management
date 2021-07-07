@@ -6,13 +6,13 @@ from django.db.models import Q
 import uuid
 import datetime
 
-from django.db.models.fields import BigIntegerField, TextField, URLField
+from django.db.models.fields import BigIntegerField, DateTimeField, DurationField, TextField, URLField
 
 # Create your models here.
 class Ap(models.Model):
     id = models.BigAutoField(primary_key=True)
-    no = models.CharField(max_length=100)
-    name = models.CharField(max_length=50)
+    no = models.CharField(max_length=100,blank=True,null=True)
+    name = models.CharField(max_length=50,blank=True,default='Unknown')
     vender = models.CharField(max_length=50, blank=True, null=True)
     adapter = models.CharField(max_length=50, blank=True, null=True)
     storage = models.CharField(max_length=50, blank=True, null=True)
@@ -43,13 +43,20 @@ class Ap(models.Model):
     class Meta:
         managed = True
         db_table = 'ap'
+
     def __str__(self) -> str:
-        return self.name
+        return self.ssid_2d4 or self.ssid_5 
     
     @classmethod
     def find_by_ssid(self,ssid):
-        return self.objects.filter(Q(ssid_2d4__iexact=ssid)|Q(ssid_5__iexact=ssid))
-    
+        if ssid:
+            return self.objects.filter(Q(ssid_2d4__iexact=ssid)|Q(ssid_5__iexact=ssid))
+        return None
+
+    @classmethod
+    def find_or_create_by_ssid(self,ssid):
+        return self.objects.get_or_create(ssid_2d4=ssid)
+
     @classmethod
     def get_default_ap(self):
         return self.objects.get(is_default=True)
@@ -114,20 +121,21 @@ class Tool(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
     version = models.CharField(max_length=50, blank=True, null=True)
-    tool_url = URLField(null=False,blank=False,db_column='url')
+    tool_url = URLField(null=True,blank=True,db_column='url')
 
     class Meta:
         managed = True
         db_table = 'tool'
 
-    def __str__(self) -> str:
-        return self.name
+    def __str__(self):
+       return self.name +':'+ self.version
+        
 
 class Script(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.TextField(unique=True)
     version = models.CharField(max_length=50, blank=True, null=True)
-    tool = models.ForeignKey(Tool, models.DO_NOTHING, blank=True, null=True)
+    tool = models.ManyToManyField(Tool)
     functions=ArrayField(base_field=models.BigIntegerField(),null=True,blank=True)
     wwan = models.BooleanField(default=False)
     wlan = models.BooleanField(default=False)
@@ -175,10 +183,12 @@ class Task(models.Model):
     ap = models.ForeignKey(Ap,on_delete=models.CASCADE,blank = True,null=True)
     assigner = models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
     uut_info = JSONField(blank=True,null=True)
-    power_cycle_info = JSONField(blank=True,null=True)
+    power_cycle_info = JSONField(default={})
     start_time = models.DateTimeField(blank=True,null=True)
     finish_time = models.DateTimeField(blank = True,null=True)
-    add_time=models.DateTimeField(default=datetime.datetime.now())
+    add_time=models.DateTimeField(auto_now_add=True)
+    tool = models.ForeignKey(Tool,on_delete=models.CASCADE,null=True,blank=True)
+    # ssid = models.TextField(blank=True,null=True)
     log = URLField(blank=True,null=True)
 
     class Meta:
@@ -212,13 +222,15 @@ class TaskFunction(models.Model):
         db_table='task_function'
 
 class TaskIssue(models.Model):
-    title = models.CharField(max_length=50,null=True,blank=True)
+    title = models.CharField(max_length=200,null=True,blank=True)
     level = models.CharField(max_length=50,null=True,blank=True)
     task=models.ForeignKey(Task,on_delete=models.CASCADE)
     power_state = models.ForeignKey(PowerState,null=True,blank=True,on_delete=models.CASCADE)
     device_driver = JSONField(null=True,blank=True)
     function = JSONField(null=True,blank=True)
     description = TextField(null=True,blank=True)
+    recover_time = DurationField(null=True,blank=True)
+    occur_time = DurationField(null=True,blank=True)
     add_time=models.DateTimeField(blank=True,null=True,default=datetime.datetime.now())
     
     class Meta:

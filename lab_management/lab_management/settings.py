@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['*']
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 
 }
 
@@ -48,7 +49,8 @@ INSTALLED_APPS = [
     'iur',
     'rest_framework',
     'cat',
-    'oldiur',
+    'django_filters',
+    # 'oldiur',
 
 ]
 
@@ -98,6 +100,7 @@ DATABASES = {
         'PASSWORD': '123',
 
         'HOST': 'localhost',
+        # 'HOST': 'db',
         'PORT': '5432',
     },
     'lab':{
@@ -108,17 +111,17 @@ DATABASES = {
         'HOST': 'lab',
         'PORT': '5432',
     },
-    'old':{
-        'ENGINE': 'sql_server.pyodbc',
-        'NAME':'test',
-        'HOST':'DESKTOP-8FD1NOD\SQLEXPRESS',
-        'PORT':'49172',
-        'USER':'test3',
-        'PASSWORD':'P@ssw0rd',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-        },
-    }
+    # 'old':{
+    #     'ENGINE': 'sql_server.pyodbc',
+    #     'NAME':'test',
+    #     'HOST':'DESKTOP-8FD1NOD\SQLEXPRESS',
+    #     'PORT':'49172',
+    #     'USER':'test3',
+    #     'PASSWORD':'P@ssw0rd',
+    #     'OPTIONS': {
+    #         'driver': 'ODBC Driver 17 for SQL Server',
+    #     },
+    # }
 }
 
 

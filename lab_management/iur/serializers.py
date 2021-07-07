@@ -41,14 +41,14 @@ class UutStatusSerializer(serializers.ModelSerializer):
 class PlatformPhaseSerializer(serializers.ModelSerializer):
     phase = UutPhaseSerializer()
     platform = PlatformSerializer()
-    config = PlatformConfigSerializer()
+    config = PlatformConfigSerializer(required=False)
     class Meta:
         model = PlatformPhase
         fields='__all__'
 
 class UutSerializer(serializers.ModelSerializer):
-    status = UutStatusSerializer()
-    platform_phase = PlatformPhaseSerializer()
+    status = UutStatusSerializer(required=False)
+    platform_phase = PlatformPhaseSerializer(required=False)
     class Meta:
         model = Uut
         fields='__all__'

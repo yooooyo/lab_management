@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from rest_framework.request import Request
+from rest_framework.response import Response
 from .models import Platform,Uut,PlatformConfig,UutPhase,UutStatus,PlatformPhase
 from rest_framework.permissions import AllowAny
 
@@ -27,17 +29,26 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = GroupSerializer
     permission_class = [AllowAny]
 
-class UutViewSet(viewsets.ReadOnlyModelViewSet):
+class UutViewSet(viewsets.ModelViewSet):
     queryset = Uut.objects.order_by('-keyin_time')
     serializer_class = UutSerializer
     permission_class = [AllowAny]
 
-    def get_queryset(self):
-        queryset = Uut.objects.all()
-        sn = self.request.query_params.get('sn', None)
-        if sn :
-            queryset = queryset.filter(sn=sn)
-        return queryset
+    def list(self, request:Request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        #quick get params
+        sn = request.query_params.get('sn',None)
+        if sn:
+            queryset = queryset.filter(sn__icontains=sn)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class PlatformConfigViewSet(viewsets.ReadOnlyModelViewSet):

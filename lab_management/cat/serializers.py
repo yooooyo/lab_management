@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DriverCategory, Task,Script,TaskStatus,Ap,Tool,Module,PowerState,TaskFunction,TaskIssue,Driver,DriverCategory
+from .models import DriverCategory, Task,Script,TaskStatus,Ap,Tool,Module,PowerState,TaskFunction,TaskIssue,Driver,DriverCategory,GeneralQueryString
 from iur.serializers import MemberSerializer, UutSerializer
 
 
@@ -16,6 +16,7 @@ class ToolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tool
         fields='__all__'
+
 
 class ScriptSerializer(serializers.ModelSerializer):
     tool = ToolSerializer()
@@ -48,6 +49,11 @@ class PowerStateSerializer(serializers.ModelSerializer):
 class TaskFunctionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskFunction
+        fields='__all__'
+
+class GeneralQueryStringSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GeneralQueryString
         fields='__all__'
 
 class TaskIssueSerializer(serializers.ModelSerializer):
@@ -92,6 +98,7 @@ class TaskSerializer(serializers.ModelSerializer):
         instance.power_cycle_info = validated_data.get('power_cycle_info',instance.power_cycle_info)
         instance.start_time = validated_data.get('start_time',instance.start_time)
         instance.finish_time = validated_data.get('finish_time',instance.finish_time)
+        instance.tool = validated_data.get('tool',instance.tool)
         instance.log = validated_data.get('log',instance.log)
         instance.save()
         return instance

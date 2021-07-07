@@ -11,6 +11,24 @@ class TaskStatusAdmin(admin.ModelAdmin):
     list_display = [ field.name for field in TaskStatus._meta.fields]
     list_editable = list_display.copy()
     list_editable.remove('id')
+@admin.register(TaskIssue)
+class TaskIssueAdmin(admin.ModelAdmin):
+    list_display = [ field.name for field in TaskIssue._meta.fields]
+    list_editable = ['title','description']
+    list_filter = ['title','level']
+    search_fields = ['task__uut__sn','title']
+    
+class TaskIssueInline(admin.TabularInline):
+    model = TaskIssue
+    extra = 2
+    fieldsets = (
+        (None, {
+            "fields": (
+                'title','level','power_state','device_driver','description','add_time'
+            ),
+            
+        }),
+    )
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
@@ -46,7 +64,8 @@ class TaskAdmin(admin.ModelAdmin):
     list_display.insert(5,'display_issues')
 
     list_filter = ('status','start_time','finish_time','ap')
-    search_fields = ('uut__platform_phase__platform__codename','uut__sn','script__name')
+    search_fields = ('uut__platform_phase__platform__codename','uut__sn','script__name','group_name')
+    inlines=[TaskIssueInline]
 
     hardwareid_query = GeneralQueryString.objects.get(name='hardwareid').query
 
@@ -59,17 +78,28 @@ class TaskAdmin(admin.ModelAdmin):
     platform_with_link.short_description='PLATFORM'
 
     def borrower_to_assigner(self,obj):
-        return obj.uut.borrower
+        return getattr(obj.uut,'borrower',None) 
     borrower_to_assigner.short_description='ASSIGNER'
 
     def display_cycles(self,obj):
         if obj.power_cycle_info:
-            template=[]
-            for state,cycle in obj.power_cycle_info.items():
-                template.append(
-                    f'<b>{state}</b> <span>{cycle}</span><br>'
-                )
-            return format_html('<hr>'.join(template))
+            try:
+                template=[]
+                for state,cycle in obj.power_cycle_info.items():
+                    if type(cycle) is dict:
+                        for random_state,random_info in cycle.items(): #s0
+                            count = random_info['count']
+                            unit = random_info['unit']
+                            template.append(
+                                f'<b>{random_state}</b> <span>{count} {unit}</span><br>'
+                            )
+                    else:
+                        template.append(
+                            f'<b>{state}</b> <span>{cycle}</span><br>'
+                        )
+                return format_html('<hr>'.join(template))
+            except:
+                return obj.power_cycle_info
         return None
     display_cycles.short_description = 'CYCLES'
 
@@ -104,7 +134,7 @@ class TaskAdmin(admin.ModelAdmin):
                 template.append(
                     f'<a href="/cat/taskissue/{issue.id}/change/">{issue.title}</a>'
                 )
-            template = 'br'.join(template)
+            template = '<br>'.join(template)
             return format_html(template)
         return '-'
     display_issues.short_description = 'ISSUES'
@@ -141,8 +171,8 @@ class TaskAdmin(admin.ModelAdmin):
                                 re_hardwardID = re.search(self.hardwareid_query,hardwareID)
                                 if re_hardwardID:
                                     re_hardwardID =  re_hardwardID.groupdict()
-                                    m = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
-                                    frieldly_name = frieldly_name or m.short_name
+                                    m,created = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
+                                    frieldly_name = m.short_name or frieldly_name 
                                     show_modules.append(mod_dri(module_types,frieldly_name,hardwareID,driverVersion))
                     else:
                         for wwan_submodule,wwan_submodules in modules.items():
@@ -159,8 +189,8 @@ class TaskAdmin(admin.ModelAdmin):
                                             re_hardwardID = re.search(self.hardwareid_query,hardwareID)
                                             if re_hardwardID:
                                                 re_hardwardID =  re_hardwardID.groupdict()
-                                                m = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
-                                                frieldly_name = frieldly_name or m.short_name
+                                                m,created = Module.objects.get_or_create(vender_id =re_hardwardID.get('ven',None),device_id = re_hardwardID.get('dev',None),subsys_vender_id = re_hardwardID.get('subsys',None),deliverable_name = frieldly_name)
+                                                frieldly_name = m.short_name or frieldly_name
                                                 show_modules.append(mod_dri(wwan_submodule,frieldly_name,hardwareID,driverVersion))
                                 elif type(wwan_submodules) is str:
                                     show_modules.append(mod_dri(wwan_submodule,wwan_submodules))
@@ -194,7 +224,6 @@ class TaskAdmin(admin.ModelAdmin):
                 info = osinfo()
                 info.error = e
         return info
-
 
 
 @admin.register(Script)
@@ -246,10 +275,7 @@ class TaskFunctiondmin(admin.ModelAdmin):
     list_editable = list_display.copy()
     list_editable.remove('id')
 
-@admin.register(TaskIssue)
-class TaskIssueAdmin(admin.ModelAdmin):
-    list_display = [ field.name for field in TaskIssue._meta.fields]
-    list_editable = ['title','description']
+
 
 @admin.register(GeneralQueryString)
 class GeneralQueryStringAdmin(admin.ModelAdmin):
