@@ -13,12 +13,20 @@ from rest_framework import status
 import uuid
 import json
 from datetime import timedelta
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 
+class ModelSearchFilterViewSet(viewsets.ModelViewSet):
+    filter_backends = [DjangoFilterBackend,SearchFilter]
+    pass
 
-class TaskViewSet(viewsets.ModelViewSet):
+class TaskViewSet(ModelSearchFilterViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_class = [permissions.IsAuthenticated,permissions.AllowAny]
+    
+    filterset_fields = ('group_name','script__name','uut__sn')
+    search_fields=('group_name','script__name','uut_info','start_time','finish_time','tool__name')
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -248,10 +256,16 @@ class GeneralQueryStringViewSet(viewsets.ReadOnlyModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-class TaskIssueViewSet(viewsets.ModelViewSet):
+
+
+class TaskIssueViewSet(ModelSearchFilterViewSet):
     queryset = TaskIssue.objects.all()
     serializer_class = TaskIssueSerializer
-    permission_classes = [permissions.IsAuthenticated,permissions.AllowAny]
+    permission_classes = [permissions.AllowAny]
+
+    # filter_backends = [DjangoFilterBackend,SearchFilter]
+    filterset_fields = ('title','level')
+    search_fields=('title','level','device_driver')
 
     def perform_create(self, serializer):
         return super().perform_create(serializer)
@@ -328,6 +342,21 @@ class TaskIssueViewSet(viewsets.ModelViewSet):
             instance._prefetched_objects_cache = {}
 
         return Response(serializer.data)
+    
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+    
+    
 
 
 

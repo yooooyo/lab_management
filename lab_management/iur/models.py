@@ -93,8 +93,8 @@ class Platform(models.Model):
 
 class PlatformConfig(models.Model):
     id = models.BigAutoField(primary_key=True)
-    config_name = models.CharField(max_length=50)
-    config_url = models.URLField(max_length=200)
+    config_name = models.CharField(max_length=50,null=True,blank=True)
+    config_url = models.URLField(max_length=200,null=True,blank=True)
 
     class Meta:
         managed = True
@@ -135,17 +135,18 @@ class Uut(models.Model):
     sn = models.CharField(unique=True, max_length=50)
     sku = models.CharField(max_length=50, blank=True, null=True)
     cpu = models.CharField(max_length=50, blank=True, null=True)
-    try:
-        status = models.ForeignKey(UutStatus, models.DO_NOTHING, blank=True, null=True,default=UutStatus.KEEPON())
-    except:
-        status = models.ForeignKey("UutStatus", models.DO_NOTHING, blank=True, null=True)
+    status = models.ForeignKey(UutStatus, models.DO_NOTHING, blank=True, null=True,default=UutStatus.KEEPON())
+    # try:
+        # status = models.ForeignKey(UutStatus, models.DO_NOTHING, blank=True, null=True,default=UutStatus.KEEPON())
+    # except:
+    #     status = models.ForeignKey("UutStatus", models.DO_NOTHING, blank=True, null=True)
     # status = models.ForeignKey("UutStatus", models.DO_NOTHING, blank=True, null=True)
     scrap_reason = models.TextField(blank=True, null=True)
     remark = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     scrap = models.BooleanField(default=False)
     # keyin_time = models.DateTimeField(auto_now_add=True)
-    keyin_time = models.DateTimeField(blank=True, null=True)
+    keyin_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     platform_phase = models.ForeignKey(PlatformPhase, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
