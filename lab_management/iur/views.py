@@ -50,6 +50,8 @@ class UutViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class PlatformConfigViewSet(viewsets.ReadOnlyModelViewSet):
