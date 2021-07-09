@@ -222,8 +222,8 @@ class Uut(models.Model):
 
 class UutBorrowHistory(models.Model):
     id = models.BigAutoField(primary_key=True)
-    # rent_time = models.DateTimeField(auto_now_add=True)
-    rent_time = models.DateTimeField(null=True)
+    rent_time = models.DateTimeField(auto_now_add=True)
+    # rent_time = models.DateTimeField(null=True)
     back_time = models.DateTimeField(blank=True, null=True)
     purpose = models.TextField(blank=True, null=True)
     member = models.ForeignKey(Member, models.CASCADE, blank=True, null=True)
