@@ -12,7 +12,8 @@ from django.db.models import Q, query
 from rest_framework import status
 import uuid
 import json
-from datetime import timedelta
+from datetime import timedelta,datetime
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 
@@ -281,6 +282,7 @@ class TaskIssueViewSet(ModelSearchFilterViewSet):
         recover_time = request.data.get('recover_time',None)
         occur_time = request.data.get('occur_time',None)
         description = request.data.get('description',None)
+        add_time = request.data.get('add_time',None)
         if recover_time:
             # recover_time shound be dict and has keys one of days,seconds,microseconds,milliseconds,minutes,hours,weeks 
             recover_time = json.loads(recover_time)
@@ -291,6 +293,8 @@ class TaskIssueViewSet(ModelSearchFilterViewSet):
             occur_time = timedelta(**occur_time)
         if power_state:
             power_state = PowerState.objects.get(name__iexact=power_state).id
+        if add_time:
+            add_time = datetime.strptime(add_time,r'%Y%m%d-%H%M%S')
         data.update(
             {
                 'title':title,
@@ -302,6 +306,7 @@ class TaskIssueViewSet(ModelSearchFilterViewSet):
                 'recover_time':recover_time,
                 'occur_time':occur_time,
                 'description':description,
+                'add_time':add_time,
             }
         )
         return data

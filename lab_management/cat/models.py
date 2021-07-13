@@ -227,7 +227,7 @@ class TaskIssue(models.Model):
     task=models.ForeignKey(Task,on_delete=models.CASCADE)
     power_state = models.ForeignKey(PowerState,null=True,blank=True,on_delete=models.CASCADE)
     device_driver = JSONField(null=True,blank=True)
-    function = JSONField(null=True,blank=True)
+    function = models.CharField(max_length=100,null=True,blank=True)
     description = TextField(null=True,blank=True)
     recover_time = DurationField(null=True,blank=True)
     occur_time = DurationField(null=True,blank=True)
