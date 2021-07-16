@@ -70,10 +70,11 @@ class TaskAdmin(admin.ModelAdmin):
     hardwareid_query = GeneralQueryString.objects.get(name='hardwareid').query
 
     def platform_with_link(self,obj):
-        if obj.uut:
-            template = f'<b><a href="/iur/platform/{obj.uut.platform_phase.platform.id}/change/">{obj.uut.platform_phase.platform.codename}</a></b>'
-            return format_html(template)
-        else:
+        try:
+            if obj.uut:
+                template = f'<b><a href="/iur/platform/{obj.uut.platform_phase.platform.id}/change/">{obj.uut.platform_phase.platform.codename}</a></b>'
+                return format_html(template)
+        except:
             return '-'
     platform_with_link.short_description='PLATFORM'
 
