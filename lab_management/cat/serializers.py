@@ -1,6 +1,8 @@
+
 from rest_framework import serializers
 from .models import DriverCategory, Task,Script,TaskStatus,Ap,Tool,Module,PowerState,TaskFunction,TaskIssue,Driver,DriverCategory,GeneralQueryString
-from iur.serializers import MemberSerializer, UutSerializer
+from iur.serializers import MemberSerializer, UutSerializer,UserSerializer
+from iur.models import Uut
 
 
 class TaskStatusSerializer(serializers.ModelSerializer):
@@ -76,6 +78,12 @@ class TaskIssueSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 class TaskSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        depth = kwargs.pop("depth", None)
+        if depth:
+            self.Meta.depth = depth
+        super(TaskSerializer, self).__init__(*args, **kwargs)
+
     class Meta:
         model = Task
         fields='__all__'

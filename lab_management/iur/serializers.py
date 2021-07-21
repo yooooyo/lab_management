@@ -5,7 +5,7 @@ from .models import Uut,UutStatus,PlatformPhase,PlatformConfig,UutPhase,Platform
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model= User
-        fields = ['url','username','email','groups']
+        fields = ['username','email','groups']
 
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,10 +13,11 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = ['url','name']
 
 class MemberSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(required = False)
     class Meta:
         model=Member
         fields='__all__'
+        depth=1
 
 class PlatformConfigSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,16 +40,17 @@ class UutStatusSerializer(serializers.ModelSerializer):
         fields='__all__'
 
 class PlatformPhaseSerializer(serializers.ModelSerializer):
-    phase = UutPhaseSerializer()
-    platform = PlatformSerializer()
-    config = PlatformConfigSerializer(required=False)
+    # phase = UutPhaseSerializer(required=False)
+    # platform = PlatformSerializer(required=False)
+    # config = PlatformConfigSerializer(required=False)
     class Meta:
         model = PlatformPhase
         fields='__all__'
 
+
 class UutSerializer(serializers.ModelSerializer):
-    status = UutStatusSerializer(required=False)
-    platform_phase = PlatformPhaseSerializer(required=False)
+    # status = UutStatusSerializer(required=False)
+    # platform_phase = PlatformPhaseSerializer(required=False)
     class Meta:
         model = Uut
         fields='__all__'
