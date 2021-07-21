@@ -1,6 +1,8 @@
+
 from rest_framework import serializers
 from .models import DriverCategory, Task,Script,TaskStatus,Ap,Tool,Module,PowerState,TaskFunction,TaskIssue,Driver,DriverCategory,GeneralQueryString
-from iur.serializers import MemberSerializer, UutSerializer
+from iur.serializers import MemberSerializer, UutSerializer,UserSerializer
+from iur.models import Uut
 
 
 class TaskStatusSerializer(serializers.ModelSerializer):
@@ -56,14 +58,17 @@ class GeneralQueryStringSerializer(serializers.ModelSerializer):
         model = GeneralQueryString
         fields='__all__'
 
-class TaskIssueSerializer(serializers.ModelSerializer):
+class DynamicSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        self.Meta.depth = kwargs.pop("depth", 0)
+        super().__init__(*args, **kwargs)
+
+class TaskIssueSerializer(DynamicSerializer):
 
     class Meta:
         model = TaskIssue
         fields='__all__'
     
-    def create(self, validated_data):
-        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title',instance.title)
@@ -75,13 +80,12 @@ class TaskIssueSerializer(serializers.ModelSerializer):
         instance.description = validated_data.get('description',instance.description)
         return super().update(instance, validated_data)
 
-class TaskSerializer(serializers.ModelSerializer):
+class TaskSerializer(DynamicSerializer):
+
     class Meta:
         model = Task
         fields='__all__'
     
-    def create(self, validated_data):
-        return Task.objects.create(**validated_data)
 
     def update(self,instance,validated_data):
         instance.uut = validated_data.get('uut',instance.uut)

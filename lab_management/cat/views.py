@@ -54,9 +54,23 @@ class TaskViewSet(ModelSearchFilterViewSet):
             queryset = queryset.filter(uut_uuid=uut_uuid)
         return queryset
 
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        kwargs.update({'depth':3})
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True,*args,**kwargs)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    # def retrieve(self, request, *args, **kwargs):
+    #     kwargs.update({'depth':3})
+    #     instance = self.get_object()
+    #     serializer = self.get_serializer(instance,*args, **kwargs)
+    #     return Response(serializer.data)
+
     def format_post_request(self,request:Request):
         data ={}
         uut = request.data.get('sn',None)
@@ -311,6 +325,18 @@ class TaskIssueViewSet(ModelSearchFilterViewSet):
         )
         return data
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        kwargs.update({'depth':4})
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True,*args,**kwargs)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
     def get_queryset(self):
         queryset = super().get_queryset()
         sn = self.request.query_params.get('sn',None)
@@ -349,10 +375,10 @@ class TaskIssueViewSet(ModelSearchFilterViewSet):
         return Response(serializer.data)
     
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        instance = self.get_object()
+        # kwargs.update({'depth':4})
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)

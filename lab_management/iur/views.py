@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
-from .models import Platform,Uut,PlatformConfig,UutPhase,UutStatus,PlatformPhase
+from .models import Platform,Uut,PlatformConfig,UutPhase,UutStatus,PlatformPhase,Member
 from rest_framework.permissions import AllowAny
 
 # Create your views here.
@@ -13,11 +13,16 @@ def index(request):
 
 from django.contrib.auth.models import User,Group
 from rest_framework import viewsets,permissions
-from .serializers import UserSerializer,GroupSerializer,UutSerializer,PlatformConfigSerializer,\
+from .serializers import MemberSerializer, UserSerializer,GroupSerializer,UutSerializer,PlatformConfigSerializer,\
         UutPhaseSerializer, \
         PlatformSerializer, \
         UutStatusSerializer, \
         PlatformPhaseSerializer
+
+class MemberViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Member.objects.all().order_by('usernameincompany')
+    serializer_class = MemberSerializer
+    permission_classes=[AllowAny]
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
